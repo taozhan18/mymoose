@@ -9,7 +9,7 @@
 class DarcyPressure : public ADKernelGrad
 {
 public:
-  static InputParameters validParams();
+  static InputParameters validParams(); //各处皆可引用
 
   DarcyPressure(const InputParameters & parameters);
 
