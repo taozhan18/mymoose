@@ -29,7 +29,10 @@ DarcyPressure::DarcyPressure(const InputParameters & parameters)
     // The getParam() method can be called from within any member—not just the constructor.
     _permeability(getParam<Real>("permeability")),
     _viscosity(getParam<Real>("viscosity"))
+      // check that viscosity value is not zero
 {
+    if (_viscosity == 0)
+    paramError("viscosity", "The viscosity must be a non-zero real number.");
 }
 // _qp：当前积分点，_grad_u：梯度
 // 访问测试函数梯度的函数
