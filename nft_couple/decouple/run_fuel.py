@@ -3,11 +3,12 @@ from scipy.interpolate import make_interp_spline
 import subprocess
 import netCDF4 as nc
 from tqdm.auto import tqdm
+import argparse
 
 phi = np.load("./output/nft_phi.npy")
 try:
     read_from_other_field = True
-    T_fluid = np.load("./output/nft_Tflud.npy")[:, 0, 1:, 0].transpose(0, 2, 1)  # b, 64, nt
+    T_fluid = np.load("./output/nft_Tfluid.npy")[:, 0, 1:, 0].transpose(0, 2, 1)  # b, 64, nt
 except:
     read_from_other_field = False
     print("using constant fluid temperature")
@@ -52,7 +53,7 @@ def replacements(function, batch, Lx=0.0076, Ly=0.75, Lt=5, nx=8, ny=64, nt=32, 
     X, Y, T = np.meshgrid(x_values, y_values, t_values, indexing="ij")
     if dim == 2:
         Z = function(batch)
-        print(Z.shape, X.shape)
+        # print(Z.shape, X.shape)
         for i in range(nt):
             for j in range(len(y_values)):
                 for k in range(len(x_values)):
@@ -160,7 +161,7 @@ def read_e_to_np(file_path):
     unique_y = unique_within_tolerance(np.array(y_coords), 1e-3)
 
     time_steps = u.shape[0]
-    print("the shape is: ", time_steps, len(unique_x), len(unique_y))
+    # print("the shape is: ", time_steps, len(unique_x), len(unique_y))
     z_matrix = np.zeros((2, time_steps, len(unique_x), len(unique_y)))
     mask = np.zeros((len(unique_x), len(unique_y)))
     for i in range(len(x_coords)):
@@ -188,7 +189,7 @@ def main(n=2):
         # 执行命令
         result = subprocess.run(command, capture_output=True, text=True)
         # 打印标准输出和错误输出
-        print(result.stdout)  # 打印命令的标准输出
+        # print(result.stdout)  # 打印命令的标准输出
         print(result.stderr)  # 打印命令的错误输出（如果有）
         outputs = read_e_to_np("./solid_out.e")
         phi_all.append(phi)
@@ -199,4 +200,8 @@ def main(n=2):
     np.save("./output/nft_Tfuel", np.array(outputs_all))
 
 
-main()
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Generate data")
+    parser.add_argument("--n", default="2000", type=int, help="number of sample")
+    args = parser.parse_args()
+    main(args.n)

@@ -3,6 +3,7 @@ from scipy.interpolate import make_interp_spline
 import subprocess
 import netCDF4 as nc
 from tqdm.auto import tqdm
+import argparse
 
 flux = np.load("./output/nft_Tfuel.npy")[:, 1, 1:, -1]
 
@@ -42,7 +43,7 @@ def replacements(function, batch, Lx=0.0076, Ly=0.75, Lt=5, nx=8, ny=64, nt=32, 
     Z = function(batch)
     for i in range(nt):
         for j in range(ny + 1):
-            data += "%.5f " % Z[j, i]
+            data += "%.1f " % Z[j, i]
     replacements = {"y_coor": coor_y_str, "t_coor": coor_t_str, "data": data}
     inputs = Z
     return replacements, inputs
@@ -117,7 +118,7 @@ def read_e_to_np(file_path):
     unique_x = unique_within_tolerance(np.array(x_coords), 1e-6)
     unique_y = unique_within_tolerance(np.array(y_coords), 1e-3)
 
-    print("the shape is: ", num_time_steps, len(unique_x), len(unique_y))
+    # print("the shape is: ", num_time_steps, len(unique_x), len(unique_y))
     z_matrix = np.concatenate((T_fluid, pressure, vel_x, vel_y), axis=0).transpose(0, 1, 3, 2)
     return z_matrix
 
@@ -133,7 +134,7 @@ def main(n=2):
         # 执行命令
         result = subprocess.run(command, capture_output=True, text=True)
         # 打印标准输出和错误输出
-        print(result.stdout)  # 打印命令的标准输出
+        # print(result.stdout)  # 打印命令的标准输出
         print(result.stderr)  # 打印命令的错误输出（如果有）
         outputs = read_e_to_np("./fluid_out.e")
         flux_all.append(flux)
@@ -142,4 +143,8 @@ def main(n=2):
     np.save("./output/nft_Tfluid", np.array(outputs_all))
 
 
-main()
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Generate data")
+    parser.add_argument("--n", default="2000", type=int, help="number of sample")
+    args = parser.parse_args()
+    main(args.n)

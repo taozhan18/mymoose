@@ -3,6 +3,7 @@ from scipy.interpolate import make_interp_spline
 import subprocess
 import netCDF4 as nc
 from tqdm.auto import tqdm
+import argparse
 
 try:
     read_from_other_field = True
@@ -31,7 +32,7 @@ def replacements(function, batch, Lx=0.0076, Ly=0.75, Lt=5, nx=8, ny=64, nt=32, 
     dt = Lt / nt
     coor_t_str = ""
     data = ""
-    if read_from_other_field == False or bias_y == 0:  # fuel is difine in mesh point
+    if read_from_other_field == False or bias_x == 0:  # fuel is difine in mesh point
         coor_x_str = "%.5f" % bias_x
         coor_y_str = "%.5f" % bias_y
         for i in range(nx):
@@ -58,20 +59,16 @@ def replacements(function, batch, Lx=0.0076, Ly=0.75, Lt=5, nx=8, ny=64, nt=32, 
         for i in range(nt):
             for j in range(len(y_values)):
                 for k in range(len(x_values)):
-                    data += "%.1f " % Z[k, j, i]
+                    data += "%.2f " % Z[k, j, i]
         replacements = {"x_coor": coor_x_str, "y_coor": coor_y_str, "t_coor": coor_t_str, "data": data}
     else:
         Z = function(batch)
         for i in range(nt):
             for j in range(len(y_values)):
-                data += "%.1f " % Z[j, i]
+                data += "%.2f " % Z[j, i]
         replacements = {"y_coor": coor_y_str, "t_coor": coor_t_str, "data": data}
         inputs = Z
     return replacements, inputs
-
-
-def gen_phi_source(x, y, z):
-    return (z + 2) * np.cos((y - 0.375) / 0.75 * 3.14)
 
 
 def gen_phi_BC(*arg):
@@ -142,11 +139,6 @@ def gen_T_fluid(batch, x, *arg):
         return np.ones_like(x) * 560
 
 
-# def rho_fluid(T_fluid):
-#     return 48.14*30/T_fluid/(1+0.4446*30/T_fluid**1.2)
-# def gen_D_fluid(x,y,z):
-#     T = gen_T_fluid(x,y,z)
-#     return 1/(rho_fluid(T)*1.5*0.76*1e-5)/3
 def gen_sigma_af_fluid(batch, x, y, z):
     T = gen_T_fluid(batch, x, y, z)
     return -(20 + 20 * (T - 560) / (800 - 560)), T
@@ -156,7 +148,7 @@ def gen_sigma_af_fuel(batch, x, y, z):
     T = gen_T_fuel(batch, x, y, z)
     return (
         2.416 * 583.5 * 1.305 * 1.602 * 0.1
-        - (13.47 * (T - 560) / (800 - 560) + 7.53) * 2.1479 * 1.602
+        - (13.47 * (T - 560) / (900 - 560) + 7.53) * 2.1479 * 1.602
         + 0.185 * 6.6072 * 0.1
         - 680.9 * 1.305 * 1.602 * 0.1
     ), T
@@ -253,7 +245,7 @@ def read_e_to_np(file_path):
     unique_y = unique_within_tolerance(np.array(y_coords), 1e-3)
 
     time_steps = u.shape[0]
-    print("the shape is: ", time_steps, len(unique_x), len(unique_y))
+    # print("the shape is: ", time_steps, len(unique_x), len(unique_y))
     z_matrix = np.zeros((time_steps, len(unique_x), len(unique_y)))
     mask = np.zeros((len(unique_x), len(unique_y)))
     for i in range(len(x_coords)):
@@ -278,7 +270,7 @@ def main(n=2):
         # 执行命令
         result = subprocess.run(command, capture_output=True, text=True)
         # 打印标准输出和错误输出
-        print(result.stdout)  # 打印命令的标准输出
+        # print(result.stdout)  # 打印命令的标准输出
         print(result.stderr)  # 打印命令的错误输出（如果有）
         outputs = read_e_to_np("./neutron_out.e")
         phiBC_all.append(phiBC)
@@ -291,4 +283,8 @@ def main(n=2):
     np.save("./output/nft_phi", np.array(outputs_all))
 
 
-main()
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Generate data")
+    parser.add_argument("--n", default="2000", type=int, help="number of sample")
+    args = parser.parse_args()
+    main(args.n)

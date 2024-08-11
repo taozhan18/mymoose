@@ -33,27 +33,27 @@ v = 2.416
     Coefficient = '${fparse 1 / v}'#
   []
   [diff_fuel]
-    type = FunctionDiffusion
+    type = MatDiffusion
     variable = u
-    function = 0.008249
+    diffusivity = D_fuel
     block = 'fuel'
   []
   [diff_fluid]
-    type = FunctionDiffusion
+    type = MatDiffusion
     variable = u
-    function = 0.01
+    diffusivity = D_fluid
     block = 'fluid'
   []
   [reaction_fuel]
-    type = FunctionReaction
+    type = MatReaction
     variable = u
-    function = 118.85827
+    mob_name = sigma_af_fuel
     block = 'fuel'
   []
   [reaction_fluid]
-    type = FunctionReaction
+    type = MatReaction
     variable = u
-    function = -5.78
+    mob_name = sigma_af_fluid
     block = 'fluid'
   []
   # [source]
@@ -102,13 +102,13 @@ v = 2.416
   [./compute_sigma_af_fuel]
     type = GenericFunctionMaterial
     prop_names = 'sigma_af_fuel'
-    prop_values = f_sigma_af_fuel
+    prop_values = 'f_sigma_af_fuel'
     block = 'fuel'
   [../]
-  [./compute_aux_sigma_af_fluid]
+  [./compute_sigma_af_fluid]
     type = GenericFunctionMaterial
     prop_names = 'sigma_af_fluid'
-    prop_values = f_sigma_af_fluid
+    prop_values = 'f_sigma_af_fluid'
     block = 'fluid'
   [../]
 []
