@@ -154,7 +154,7 @@ def read_e_to_np(file_path):
     time_steps = dataset.variables["time_whole"][:]
     num_time_steps = len(time_steps)
     u = dataset.variables["vals_nod_var1"]
-    flux = dataset.variables["vals_nod_var2"]
+    flux = np.array(dataset.variables["vals_elem_var1eb1"]).reshape(1, num_time_steps, 64, 8).transpose(0, 1, 3, 2)
     # flux1 = dataset.variables["vals_nod_var3"]
 
     unique_x = unique_within_tolerance(np.array(x_coords), 1e-6)
@@ -162,17 +162,18 @@ def read_e_to_np(file_path):
 
     time_steps = u.shape[0]
     # print("the shape is: ", time_steps, len(unique_x), len(unique_y))
-    z_matrix = np.zeros((2, time_steps, len(unique_x), len(unique_y)))
+    z_matrix = np.zeros((1, time_steps, len(unique_x), len(unique_y)))
     mask = np.zeros((len(unique_x), len(unique_y)))
     for i in range(len(x_coords)):
         x_index = np.argmin(np.abs(x_coords[i] - unique_x))
         y_index = np.argmin(np.abs(y_coords[i] - unique_y))
         mask[x_index, y_index] = 1
         z_matrix[0, :, x_index, y_index] = u[:, i]
-        z_matrix[1, :, x_index, y_index] = flux[:, i]
+        # z_matrix[1, :, x_index, y_index] = flux[:, i]
         # z_matrix[2, :, x_index, y_index] = flux1[:, i]
+    z_matrix = (z_matrix[:, :, 1:, 1:] + z_matrix[:, :, :-1, :-1]) / 2
     assert np.mean(mask) == 1, "An element has not been assigned a value"
-    return z_matrix
+    return np.concatenate((z_matrix, flux), axis=0)
 
 
 def main(n=2):

@@ -20,7 +20,7 @@ power_file = 'solidinp/phi.txt'
 
 [AuxVariables]
   [flux]
-    order = FIRST
+    order = CONSTANT
     family = MONOMIAL
   [../]
 []

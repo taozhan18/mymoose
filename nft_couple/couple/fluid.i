@@ -1,269 +1,314 @@
-# This test case tests the porous-medium flow with volumetric heat source
-#
-# At the steady state, the energy balance is given by
-#   rho * u * (h_out - h_in) = q''' * L
-#
-# with rho * u = 100; cp = 100; q''' = 1e6, L = 1, it is easy to obtain:
-#   T_out - T_in = 1e6 / (100 * 100) = 100
-#
-# This can be verified by check the T_out - T_in
+# Fluid properties
+rho = 11096
+# Operating conditions
+v_inlet = 1
+T_inlet = 560
+p_outlet = 0
 
-[GlobalParams]
-  gravity = '0 0 0'
-
-  order = FIRST
-  family = LAGRANGE
-
-  u = vel_x
-  v = vel_y
-  pressure = p
-  temperature = T
-  porosity = porosity
-  eos = eos
-[]
+# Numerical scheme
+advected_interp_method = 'average'
+velocity_interp_method = 'rc'
 
 [Mesh]
-  type = GeneratedMesh
-  dim = 2
-  xmin = 0
-  xmax = 0.0114
-  ymin = 0
-  ymax = 0.75
-  nx = 10
-  ny = 64
-  elem_type = QUAD4
-[]
-
-[FluidProperties]
-  [./eos]
-    type = SimpleFluidProperties
-    density0 = 1.98             # kg/m^3
-    thermal_expansion = 0       # K^{-1}
-    cp =  3000
-    viscosity = 4E-5            # Pa-s, Re=rho*u*L/mu = 100*1*0.1/0.1 = 100
-    thermal_conductivity = 0.31
-  [../]
-[]
-
-[Functions]
-  [v_in]
-    type = PiecewiseLinear
-    x = '0   1e5'
-    y = '1     1'
+  [gen]
+    type = GeneratedMeshGenerator
+    dim = 2
+    xmin = 0
+    xmax = 0.0114
+    ymin = 0
+    ymax = 0.75
+    nx = 12
+    ny = 64
   []
-  [T_in]
-    type = PiecewiseLinear
-    x = '0    1e5'
-    y = '630  630'
+[]
+
+[GlobalParams]
+  rhie_chow_user_object = 'rc'
+[]
+
+[UserObjects]
+  [rc]
+    type = INSFVRhieChowInterpolator
+    u = vel_x
+    v = vel_y
+    pressure = pressure
   []
 []
 
 [Variables]
-  # velocity
   [vel_x]
-    initial_condition = 0
+    type = INSFVVelocityVariable
+    initial_condition = ${v_inlet}
   []
   [vel_y]
-    initial_condition = 1
+    type = INSFVVelocityVariable
+    initial_condition = 1e-12
   []
-  [p]
-    initial_condition = 3e6
+  [pressure]
+    type = INSFVPressureVariable
   []
-  [T]
-    #scaling = 1e-3
-    initial_condition = 630
+  [T_fluid]
+    type = INSFVEnergyVariable
+    initial_condition = ${T_inlet}
   []
 []
 
 [AuxVariables]
-  [rho]
-    initial_condition = 100
-  []
-  [porosity]
-    initial_condition = 0.4
-  []
-  [vol_heat]
+  [./aux_mu]
+    family = MONOMIAL
+    order = FIRST
+  [../]
+  [./aux_k]
+    family = MONOMIAL
+    order = FIRST
+  [../]
+  [./aux_cp]
+    family = MONOMIAL
+    order = FIRST
+  [../]
+  [flux]
+    order = CONSTANT
+    family = MONOMIAL
     initial_condition = 0
   []
-  [flux]
-    initial_condition = 1e3
-  []
 []
 
-[Materials]
-  [mat]
-    type = PINSFEMaterial
-    alpha = 1000
-    beta = 100
+[FVKernels]
+  [mass]
+    type = INSFVMassAdvection
+    variable = pressure
+    advected_interp_method = ${advected_interp_method}
+    velocity_interp_method = ${velocity_interp_method}
+    rho = ${rho}
   []
-[]
-
-
-[Kernels]
-  [mass_time]
-    type = PINSFEFluidPressureTimeDerivative
-    variable = p
-  []
-  [mass_space]
-    type = INSFEFluidMassKernel
-    variable = p
-  []
-
-  [x_momentum_time]
-    type = PINSFEFluidVelocityTimeDerivative
+  [u_time]
+    type = INSFVMomentumTimeDerivative
     variable = vel_x
+    rho = ${rho}
+    momentum_component = 'x'
   []
-  [x_momentum_space]
-    type = INSFEFluidMomentumKernel
+  [u_advection]
+    type = INSFVMomentumAdvection
     variable = vel_x
-    component = 0
+    advected_interp_method = ${advected_interp_method}
+    velocity_interp_method = ${velocity_interp_method}
+    rho = ${rho}
+    momentum_component = 'x'
+  []
+  [u_viscosity]
+    type = INSFVMomentumDiffusion
+    variable = vel_x
+    mu = aux_mu
+    momentum_component = 'x'
+  []
+  [u_pressure]
+    type = INSFVMomentumPressure
+    variable = vel_x
+    momentum_component = 'x'
+    pressure = pressure
   []
 
-  [y_momentum_time]
-    type = PINSFEFluidVelocityTimeDerivative
+  [v_time]
+    type = INSFVMomentumTimeDerivative
     variable = vel_y
+    rho = ${rho}
+    momentum_component = 'y'
   []
-  [y_momentum_space]
-    type = INSFEFluidMomentumKernel
+  [v_advection]
+    type = INSFVMomentumAdvection
     variable = vel_y
-    component = 1
+    advected_interp_method = ${advected_interp_method}
+    velocity_interp_method = ${velocity_interp_method}
+    rho = ${rho}
+    momentum_component = 'y'
+  []
+  [v_viscosity]
+    type = INSFVMomentumDiffusion
+    variable = vel_y
+    mu = aux_mu
+    momentum_component = 'y'
+  []
+  [v_pressure]
+    type = INSFVMomentumPressure
+    variable = vel_y
+    momentum_component = 'y'
+    pressure = pressure
   []
 
-  [temperature_time]
-    type = PINSFEFluidTemperatureTimeDerivative
-    variable = T
-  [../]
-  [temperature_space]
-    type = INSFEFluidEnergyKernel
-    variable = T
-    power_density = vol_heat
+  [energy_time]
+    type = INSFVEnergyTimeDerivative
+    variable = T_fluid
+    rho = ${rho}
+    dh_dt = dh_dt
+  []
+  [energy_advection]
+    type = INSFVEnergyAdvection
+    variable = T_fluid
+    velocity_interp_method = ${velocity_interp_method}
+    advected_interp_method = ${advected_interp_method}
+  []
+  [energy_diffusion]
+    type = FVDiffusion
+    variable = T_fluid
+    coeff = aux_k
   []
 []
 
 [AuxKernels]
-  [rho_aux]
-    type = FluidDensityAux
-    variable = rho
-    p = p
-    T = T
-    fp = eos
-  []
-[]
-
-[BCs]
-  # BCs for mass equation
-  # Inlet
-  [mass_inlet]
-    type = INSFEFluidMassBC
-    variable = p
-    boundary = 'bottom'
-    v_fn = v_in
-  []
-  # Outlet
-  [./pressure_out]
-    type = DirichletBC
-    variable = p
-    boundary = 'top'
-    value = 3e6
+  [./compute_aux_mu]
+    type = ParsedAux
+    variable = aux_mu
+    coupled_variables = 'T_fluid'
+    function = '4.94e-4*exp(754.1/T_fluid)'
   [../]
+  [./compute_aux_k]
+    type = ParsedAux
+    variable = aux_k
+    coupled_variables = 'T_fluid'
+    function = '3.61+1.517e-2*T_fluid-1.741e-6*T_fluid*T_fluid'
+  [../]
+  [./compute_aux_cp]
+    type = ParsedAux
+    variable = aux_cp
+    coupled_variables = 'T_fluid'
+    function = '159-2.72e-2*T_fluid+7.12e-6*T_fluid*T_fluid'
+  [../]
+[]
 
-  # BCs for x-momentum equation
-  # Inlet
-  [vy_in]
-    type = FunctionDirichletBC
+[FVBCs]
+  [inlet-v]
+    type = INSFVInletVelocityBC
+    boundary = 'bottom'
     variable = vel_y
-    boundary = 'bottom'
-    function = v_in
+    function = inlet_v
   []
-  # Outlet (no BC is needed)
-
-  # BCs for y-momentum equation
-  # Both Inlet and Outlet, and Top and Bottom
-  [vx]
-    type = DirichletBC
+  [inlet-u]
+    type = INSFVInletVelocityBC
+    boundary = 'bottom'
     variable = vel_x
-    boundary = 'left right bottom top'
-    value = 0
+    function = 0
   []
 
-  # BCs for energy equation
-  [T_in]
-    type = FunctionDirichletBC
-    variable = T
+  [inlet-T]
+    type = FVDirichletBC
+    variable = T_fluid
+    value = '${fparse T_inlet}'#
     boundary = 'bottom'
-    function = T_in
   []
+
   [T_left]
-    type = CoupledVarNeumannBC
-    variable = T
+    type = FVFunctorNeumannBC
+    variable = T_fluid
     boundary = 'left'
-    v = flux
+    functor = flux
+    factor = 1
+  []
+
+  [no-slip-u]
+    type = INSFVNoSlipWallBC
+    boundary = 'left'
+    variable = vel_x
+    function = 0
+  []
+  [no-slip-v]
+    type = INSFVNoSlipWallBC
+    boundary = 'left'
+    variable = vel_y
+    function = 0
+  []
+
+  [symmetry-u]
+    type = INSFVSymmetryVelocityBC
+    boundary = 'right'
+    variable = vel_x
+    u = vel_x
+    v = vel_y
+    mu = aux_mu
+    momentum_component = 'x'
+  []
+  [symmetry-v]
+    type = INSFVSymmetryVelocityBC
+    boundary = 'right'
+    variable = vel_y
+    u = vel_x
+    v = vel_y
+    mu = aux_mu
+    momentum_component = 'y'
+  []
+  [symmetry-p]
+    type = INSFVSymmetryPressureBC
+    boundary = 'right'
+    variable = pressure
+  []
+
+  [outlet_u]
+    type = INSFVMomentumAdvectionOutflowBC
+    variable = vel_x
+    u = vel_x
+    v = vel_y
+    boundary = 'top'
+    momentum_component = 'x'
+    rho = ${rho}
+  []
+  [outlet_v]
+    type = INSFVMomentumAdvectionOutflowBC
+    variable = vel_y
+    u = vel_x
+    v = vel_y
+    boundary = 'top'
+    momentum_component = 'y'
+    rho = ${rho}
+  []
+  [outlet_p]
+    type = INSFVOutletPressureBC
+    boundary = 'top'
+    variable = pressure
+    function = '${p_outlet}'
   []
 []
 
-[Preconditioning]
-  [SMP_PJFNK]
-    type = SMP
-    full = true
-    solve_type = 'PJFNK'
+[FunctorMaterials]
+  [functor_constants]
+    type = ADGenericFunctorMaterial
+    prop_names = 'cp k mu'
+    prop_values = 'aux_cp aux_k aux_mu'
+  []
+  [ins_fv]
+    type = INSFVEnthalpyFunctorMaterial
+    rho = ${rho}
+    temperature = 'T_fluid'
   []
 []
 
-[Postprocessors]
-  [p_in]
-    type = SideAverageValue
-    variable = p
-    boundary = bottom
-  []
-  [p_out]
-    type = SideAverageValue
-    variable = p
-    boundary = top
-  []
-  [T_in]
-    type = SideAverageValue
-    variable = T
-    boundary = bottom
-  []
-  [T_out]
-    type = SideAverageValue
-    variable = T
-    boundary = top
-  []
+
+[Functions]
+  [./inlet_v]
+    type = ParsedFunction
+    expression = '0.4'
+  [../]
+  # [./flux]
+  #   type = PiecewiseMultilinear
+  #   data_file = ${flux_file}
+  # [../]
 []
 
 [Executioner]
   type = Transient
-
-  dt = 1
-  dtmin = 1.e-3
-
-  petsc_options_iname = '-pc_type -ksp_gmres_restart'
-  petsc_options_value = 'lu 100'
-
-  nl_rel_tol = 1e-10
+  solve_type = 'NEWTON'
+  petsc_options_iname = '-pc_type -pc_factor_shift_type'
+  petsc_options_value = 'lu NONZERO'
+  line_search = 'none'
+  nl_rel_tol = 1e-8
   nl_abs_tol = 1e-8
   nl_max_its = 20
 
   l_tol = 1e-5
   l_max_its = 100
-
-  start_time = 0.0
-  end_time = 10
-#  num_steps = 10
+  start_time = 0
+  end_time = 5
+  num_steps = 32
 []
 
 [Outputs]
-  perf_graph = true
-  print_linear_residuals = false
-  time_step_interval = 1
-  execute_on = 'initial timestep_end'
-  [console]
-    type = Console
-    output_linear = false
-  []
-  [out]
-    type = Exodus
-    use_displaced = false
-  []
+  exodus = true
 []

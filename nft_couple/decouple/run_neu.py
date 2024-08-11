@@ -23,7 +23,9 @@ def write_inp(base_file, out_file, replacements):
         file.write(src)
 
 
-def replacements(function, batch, Lx=0.0076, Ly=0.75, Lt=5, nx=8, ny=64, nt=32, bias_x=0, bias_y=0, bias_t=0, dim=2):
+def replacements(
+    function, batch, tag="T", Lx=0.0076, Ly=0.75, Lt=5, nx=8, ny=64, nt=32, bias_x=0, bias_y=0, bias_t=0, dim=2
+):
     # phi: Lx=0.0076, Ly=0.75, Lt=5, nx=8, ny=64, nt=32
     # Tfuel: Lx=0.0076, Ly=0.75, Lt=5, nx=8, ny=64, nt=32
     # Tfluid: Lx=0.0114, Ly=0.75, Lt=5, nx=12, ny=64, nt=32, bias_y = 0.0075
@@ -32,7 +34,7 @@ def replacements(function, batch, Lx=0.0076, Ly=0.75, Lt=5, nx=8, ny=64, nt=32, 
     dt = Lt / nt
     coor_t_str = ""
     data = ""
-    if read_from_other_field == False or bias_x == 0:  # fuel is difine in mesh point
+    if read_from_other_field == False or tag == "phi":  # fuel is difine in mesh point
         coor_x_str = "%.5f" % bias_x
         coor_y_str = "%.5f" % bias_y
         for i in range(nx):
@@ -158,6 +160,7 @@ def gen_neu_inp(batch):
     replacements_phi, phi = replacements(
         function=gen_phi_BC,
         batch=batch,
+        tag="phi",
         Lx=0.0076,
         Ly=0.75,
         Lt=5,

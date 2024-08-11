@@ -24,14 +24,14 @@ def replacements(function, batch, Lx=0.0076, Ly=0.75, Lt=5, nx=8, ny=64, nt=32, 
     dx = Lx / nx
     dy = Ly / ny
     dt = Lt / nt
-    coor_x_str = "%.5f" % bias_x
-    coor_y_str = "%.5f" % bias_y
+    coor_x_str = ""
+    coor_y_str = ""
     coor_t_str = ""
     data = ""
     for i in range(nx):
-        coor_x_str = coor_x_str + " %.5f" % (dx * (i + 1) + bias_x)
+        coor_x_str = coor_x_str + " %.5f" % (dx * i + dx / 2 + bias_x)
     for i in range(ny):
-        coor_y_str = coor_y_str + " %.5f" % (dy * (i + 1) + bias_y)
+        coor_y_str = coor_y_str + " %.5f" % (dy * i + dy / 2 + bias_y)
     for i in range(nt):
         coor_t_str = coor_t_str + "%.5f " % (dt * (i + 1) + bias_t)
 
@@ -42,7 +42,7 @@ def replacements(function, batch, Lx=0.0076, Ly=0.75, Lt=5, nx=8, ny=64, nt=32, 
     X, Y, T = np.meshgrid(x_values, y_values, t_values, indexing="ij")
     Z = function(batch)
     for i in range(nt):
-        for j in range(ny + 1):
+        for j in range(len(y_values)):
             data += "%.1f " % Z[j, i]
     replacements = {"y_coor": coor_y_str, "t_coor": coor_t_str, "data": data}
     inputs = Z

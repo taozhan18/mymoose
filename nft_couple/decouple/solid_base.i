@@ -20,7 +20,7 @@ power_file = %(power_file)s
 
 [AuxVariables]
   [flux]
-    order = FIRST
+    order = CONSTANT
     family = MONOMIAL
   [../]
 []

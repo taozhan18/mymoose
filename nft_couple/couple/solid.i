@@ -2,40 +2,28 @@
   type = GeneratedMesh
   dim = 2
   xmin = 0
-  xmax = 0.00076
+  xmax = 0.0076
   ymin = 0
   ymax = 0.75
-  nx = 10
+  nx = 8
   ny = 64
   elem_type = QUAD4
 []
 
 [Variables]
   [T]
-    initial_condition = 742
+    initial_condition = 560
   []
 []
 
 [AuxVariables]
-  [fluidT]
-    #order = CONSTANT
-    initial_condition = 742
-  []
-  [fluidT1]
-    initial_condition = 742
+  [T_fluid]
+    initial_condition = 560
   []
   [flux]
-    order = FIRST
+    order = CONSTANT
     family = MONOMIAL
   [../]
-  [flux1]
-    order = FIRST
-    family = MONOMIAL
-  [../]
-  [project_flux]
-    order = FIRST
-    family = LAGRANGE
-  []
 []
 
 [Kernels]
@@ -50,10 +38,9 @@
   [source]
     type = HeatSource
     variable = T
-    function = 1e8
+    function = 1e8 #powerxy
   []
 []
-
 
 [AuxKernels]
   [flux_x]
@@ -62,18 +49,8 @@
     variable = flux
     diffusion_variable = T
     component = x
-  []
-  [./flux_x1]
-    type = VariableGradientComponent
-    variable = flux1
-    component = x
-    gradient_variable = T
     boundary = right
-  [../]
-  [copy_over]
-    type = ProjectionAux
-    v = flux
-    variable = project_flux
+    #execute_on = 'FINAL'
   []
 []
 
@@ -89,7 +66,7 @@
     type = FunctorDirichletBC
     variable = T
     boundary = right
-    functor =  fluidT
+    functor = T_fluid
   [../]
 []
 
@@ -116,38 +93,39 @@
     type = ParsedFunction
     expression = '17.5*(1-0.223)/(1+0.161)+1.54e-2*(1+0.0061)/(1+0.161)*t+9.38e-6*t*t'  # 热导率随温度变化的函数
   [../]
-  [./Tz]
-    type = PiecewiseLinear
-    axis = y
-    x = '0 0.75'
-    y = '742 800'
-  [../]
+  # [./Ty]
+  #   type = PiecewiseMultilinear
+  #   data_file = ${Ty_file}
+  # [../]
+  # [./powerxy]
+  #   type = PiecewiseMultilinear
+  #   data_file = ${power_file}
+  # [../]
 []
 
 [MultiApps]
   [sub_app]
     type = TransientMultiApp
-    positions = '0.00076 0 0'
-    input_files = 'test.i'
+    positions = '0.0076 0 0'
+    input_files = 'fluid.i'
     sub_cycling = true
   []
 []
 
 [Transfers]
   [pull_T]
-    type = MultiAppGeneralFieldNearestNodeTransfer
+    type = MultiAppGeneralFieldNearestLocationTransfer
 
     # Transfer from the sub-app to this app
     from_multi_app = sub_app
 
     # The name of the variable in the sub-app
-    source_variable = project_T
+    source_variable = T_fluid
 
     # The name of the auxiliary variable in this app
-    variable = fluidT
+    variable = T_fluid
     from_boundaries = left
     to_boundaries = right
-    error_on_miss = true
   []
 
   [push_flux]
@@ -157,67 +135,24 @@
     to_multi_app = sub_app
 
     # The name of the variable in this app
-    source_variable = project_flux
+    source_variable = flux
 
     # The name of the auxiliary variable in the sub-app
     variable = flux
-    # source_boundary = right
-    # target_boundary = left
 
     from_boundaries = right
     to_boundaries = left
     error_on_miss = true
   []
-
-  [push_tf]
-    type = MultiAppNearestNodeTransfer
-
-    # Transfer to the sub-app from this app
-    to_multi_app = sub_app
-
-    # The name of the variable in this app
-    source_variable = flux1
-
-    # The name of the auxiliary variable in the sub-app
-    variable = tf
-    source_boundary = right
-    target_boundary = left
-  []
 []
 
 [Executioner]
   type = Transient
-
-  dt = 0.1
-  #dtmin = 1.e-3
-
-  petsc_options_iname = '-pc_type -ksp_gmres_restart'
-  petsc_options_value = 'lu 100'
-
-  nl_rel_tol = 1e-10
-  nl_abs_tol = 1e-8
-  nl_max_its = 20
-
-
-  l_tol = 1e-5
-  l_max_its = 100
-
   start_time = 0.0
-  end_time = 1
-#  num_steps = 100
+  end_time = 5
+  num_steps = 32
 []
 
 [Outputs]
-  perf_graph = true
-  print_linear_residuals = false
-  time_step_interval = 1
-  execute_on = 'initial timestep_end'
-  [console]
-    type = Console
-    output_linear = false
-  []
-  [out]
-    type = Exodus
-    use_displaced = false
-  []
+  exodus = true
 []
