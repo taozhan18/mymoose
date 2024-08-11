@@ -4,7 +4,7 @@
 
 [Mesh]
   type = FileMesh
-  file = val.e  # 替换为你的网格文件
+  file = val_mesh.e  # 替换为你的网格文件
 []
 
 [Variables]
@@ -86,7 +86,7 @@
     type = DirichletBC
     variable = T
     value = 948
-    boundary = heatpipe_b
+    boundary = heatpipe
   []
   [./left_symmetry]
     type = NeumannBC
@@ -104,7 +104,7 @@
     type = NeumannBC
     variable = T
     boundary = 'matrixin_b'
-    value = 1e7  # 这里设置你的热通量值，可以是常数或函数
+    value = 5e5  # 这里设置你的热通量值，可以是常数或函数
   [../]
   [./Pressure]
     [./inter]

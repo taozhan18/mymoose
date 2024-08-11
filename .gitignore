@@ -106,7 +106,8 @@ compile_commands.json
 build
 framework/contrib/libtorch
 test.cache
-
+*.npy
+*.Zone.Identifier
 # Allow certain files in gold directories
 !**/gold/*.e
 !**/gold/*.e-s*

@@ -26,22 +26,22 @@
   type = GeneratedMesh
   dim = 2
   xmin = 0
-  xmax = 1
+  xmax = 0.0114
   ymin = 0
-  ymax = 0.1
+  ymax = 0.75
   nx = 10
-  ny = 4
+  ny = 64
   elem_type = QUAD4
 []
 
 [FluidProperties]
   [./eos]
     type = SimpleFluidProperties
-    density0 = 100              # kg/m^3
+    density0 = 11096            # kg/m^3
     thermal_expansion = 0       # K^{-1}
-    cp =  100
-    viscosity = 0.1             # Pa-s, Re=rho*u*L/mu = 100*1*0.1/0.1 = 100
-    thermal_conductivity = 0.1
+    cp =  159
+    viscosity = 1E-3            # Pa-s, Re=rho*u*L/mu = 100*1*0.1/0.1 = 100
+    thermal_conductivity = 3.61
   [../]
 []
 
@@ -61,16 +61,16 @@
 [Variables]
   # velocity
   [vel_x]
-    initial_condition = 1
-  []
-  [vel_y]
     initial_condition = 0
   []
+  [vel_y]
+    initial_condition = 1
+  []
   [p]
-    initial_condition = 1e5
+    #initial_condition = 3e6
   []
   [T]
-    scaling = 1e-3
+    #scaling = 1e-3
     initial_condition = 630
   []
 []
@@ -83,7 +83,10 @@
     initial_condition = 0.4
   []
   [vol_heat]
-    initial_condition = 1e6
+    initial_condition = 0
+  []
+  [flux]
+    initial_condition = 1e3
   []
 []
 
@@ -153,32 +156,32 @@
   [mass_inlet]
     type = INSFEFluidMassBC
     variable = p
-    boundary = 'left'
+    boundary = 'bottom'
     v_fn = v_in
   []
   # Outlet
   [./pressure_out]
     type = DirichletBC
     variable = p
-    boundary = 'right'
-    value = 1e5
+    boundary = 'top'
+    value = 3e6
   [../]
 
   # BCs for x-momentum equation
   # Inlet
-  [vx_in]
+  [vy_in]
     type = FunctionDirichletBC
-    variable = vel_x
-    boundary = 'left'
+    variable = vel_y
+    boundary = 'bottom'
     function = v_in
   []
   # Outlet (no BC is needed)
 
   # BCs for y-momentum equation
   # Both Inlet and Outlet, and Top and Bottom
-  [vy]
+  [vx]
     type = DirichletBC
-    variable = vel_y
+    variable = vel_x
     boundary = 'left right bottom top'
     value = 0
   []
@@ -187,8 +190,14 @@
   [T_in]
     type = FunctionDirichletBC
     variable = T
-    boundary = 'left'
+    boundary = 'bottom'
     function = T_in
+  []
+  [T_left]
+    type = CoupledVarNeumannBC
+    variable = T
+    boundary = 'left'
+    v = flux
   []
 []
 
@@ -204,22 +213,22 @@
   [p_in]
     type = SideAverageValue
     variable = p
-    boundary = left
+    boundary = bottom
   []
   [p_out]
     type = SideAverageValue
     variable = p
-    boundary = right
+    boundary = top
   []
   [T_in]
     type = SideAverageValue
     variable = T
-    boundary = left
+    boundary = bottom
   []
   [T_out]
     type = SideAverageValue
     variable = T
-    boundary = right
+    boundary = top
   []
 []
 
@@ -241,7 +250,7 @@
 
   start_time = 0.0
   end_time = 10
-  num_steps = 10
+#  num_steps = 10
 []
 
 [Outputs]

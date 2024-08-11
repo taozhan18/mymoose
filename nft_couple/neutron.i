@@ -1,126 +1,109 @@
+v = 2.416
+
 [Mesh]
-  type = GeneratedMesh
-  dim = 2
-  xmin = 0
-  xmax = 1
-  ymin = 0
-  ymax = 1
-  nx = 20
-  ny = 20
+  type = FileMesh
+  file = nft.e  # 替换为你的网格文件
 []
+
 
 [Variables]
-  [./phi]
-    initial_condition = 0.0
-  [../]
-  [./T]
-    family = LAGRANGE
-    order = FIRST
-  [../]
+  [u]
+  []
 []
+
 
 [Kernels]
-  [./time_derivative]
-    type = TimeDerivative
-    variable = phi
-    factor = 1/v
-  [../]
-
-  [./diffusion]
-    type = Diffusion
-    variable = phi
-  [../]
-
-  [./source]
-    type = Function
-    variable = phi
-    function = source_function
-  [../]
-
-  [./reaction]
-    type = ParsedAux
-    variable = phi
-    v = 'a_T*T*phi'
-    deps = 'T phi'
-  [../]
-[]
-
-
-[AuxVariables]
-  [./a_T]
-    order = CONSTANT
-    family = MONOMIAL
-  [../]
-[]
-
-[AuxKernels]
-  [./aT_kernel]
-    type = ParsedAux
-    variable = a_T
-    v = 'a(T)'
-    deps = 'T'
-  [../]
-[]
-
-[ICs]
-  [./phi_ic]
-    type = FunctionIC
-    variable = phi
-    function = initial_phi
-  [../]
+  [td]
+    type = CoefTimeDerivative
+    variable = u
+    Coefficient = '${fparse 1 / v}'#
+  []
+  [diff_fuel]
+    type = FunctionDiffusion
+    variable = u
+    function = 0.008249
+    block = 'fuel'
+  []
+  [diff_fluid]
+    type = FunctionDiffusion
+    variable = u
+    function = 0.01
+    block = 'fluid'
+  []
+  [reaction_fuel]
+    type = FunctionReaction
+    variable = u
+    function = 118.85827
+    block = 'fuel'
+  []
+  [reaction_fluid]
+    type = FunctionReaction
+    variable = u
+    function = -5.78
+    block = 'fluid'
+  []
 []
 
 [Functions]
-  [./source_function]
+  [./phi_source]
     type = ParsedFunction
-    value = 'x'
+    expression = '(t+5)*cos(3.14*(y-0.375)/0.75)'
   [../]
-  [./initial_phi]
+  [./UIC]
     type = ParsedFunction
-    value = 'initial_phi_expression' # 例如，初始条件为 0 或某函数表达式
-  [../]
-
-  [./T_function]
-    type = ParsedFunction
-    value = 'x' # 例如，T = f(x,y)
+    expression = '2*cos(3.14*(y-0.375)/0.75)'
   [../]
 []
 
 [BCs]
-  [./left]
-    type = DirichletBC
-    variable = phi
-    boundary = left
-    value = 0
+  [./left_symmetry]
+    type = FunctionDirichletBC
+    variable = u
+    boundary = 'left'
+    function = phi_source
   [../]
-  [./right]
-    type = DirichletBC
-    variable = phi
-    boundary = right
-    value = 0
+
+  [./right_symmetry]
+    type = NeumannBC
+    variable = u
+    boundary = 'right'
+    value = 0.0
   [../]
+
   [./top]
     type = DirichletBC
-    variable = phi
-    boundary = top
+    variable = u
     value = 0
+    boundary = top
   [../]
+
   [./bottom]
     type = DirichletBC
-    variable = phi
-    boundary = bottom
+    variable = u
     value = 0
+    boundary = bottom
   [../]
+[]
+
+[ICs]
+  [u_ic]
+    type = FunctionIC
+    variable = 'u'
+    function = UIC
+  []
 []
 
 [Executioner]
   type = Transient
-  scheme = bdf2
-  dt = 0.01
-  end_time = 1.0
+  start_time = 0
+  end_time = 5
+  #dt = 0.1
+  #nl_rel_tol = 1e-8
 []
 
 [Outputs]
-  exodus = true
+  [./csv]
+    type = CSV
+    show = u
+    [../]
 []
-
