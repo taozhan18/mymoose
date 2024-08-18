@@ -87,8 +87,8 @@ def write_inp(base_file, out_file, replacements):
 def main(n, index=0, mpi=4):
     flux = []
     for i in tqdm(range(n), desc="calculate loop time step", total=n):
-        l_b, u_b = 1, 5
-        l_b, u_b = 760 * 1e-6, 850 * 1e-6
+        l_b, u_b = 1, 1
+        # l_b, u_b = 760 * 1e-6, 850 * 1e-6
         Z = gen_flux1(l_b, u_b)
         flux.append(Z)
         replacements = replacement_inp(Z)
@@ -110,6 +110,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate data")
     parser.add_argument("--n", default="100", type=int, help="number of sample")
     parser.add_argument("--index", default="1", type=int, help="start index")
-    parser.add_argument("--mpi", default="4", type=int, help="mpiexec")
+    parser.add_argument("--mpi", default="2", type=int, help="mpiexec")
     args = parser.parse_args()
     main(args.n, args.index, args.mpi)

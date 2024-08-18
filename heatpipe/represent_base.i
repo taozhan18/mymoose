@@ -110,7 +110,7 @@
     value = 0.0
   [../]
   [./flux]
-    type = FunctorDirichletBC#NeumannBC
+    type = FunctorNeumannBC#NeumannBC
     variable = T
     boundary = 'matrixin_b'
     functor = flux_BC # 这里设置你的热通量值，可以是常数或函数

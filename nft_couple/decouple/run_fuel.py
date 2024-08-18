@@ -71,7 +71,7 @@ def replacements(function, batch, Lx=0.0076, Ly=0.75, Lt=5, nx=8, ny=64, nt=16, 
 
 def gen_power(i):
     phi_ = phi[i, 1:, :9].transpose(1, 2, 0)
-    return 1e8 * phi_
+    return phi_
 
 
 def gen_Tf(batch, x, *arg):
@@ -177,7 +177,7 @@ def read_e_to_np(file_path):
     return np.concatenate((z_matrix, flux), axis=0)
 
 
-def main(n=2):
+def main(n=1):
     # this file should be run in current file path
 
     phi_all = []
@@ -210,6 +210,6 @@ def main(n=2):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate data")
-    parser.add_argument("--n", default="2000", type=int, help="number of sample")
+    parser.add_argument("--n", default="1", type=int, help="number of sample")
     args = parser.parse_args()
     main(args.n)

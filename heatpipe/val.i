@@ -44,7 +44,7 @@
     type = ComputeVariableIsotropicElasticityTensor
     args = T
     youngs_modulus = youngs_modulus_matrix
-    poissons_ratio = 0.29
+    poissons_ratio = 0.21
     block = 'matrix'
   [../]
 

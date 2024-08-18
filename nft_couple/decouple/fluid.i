@@ -67,6 +67,11 @@ velocity_interp_method = 'rc'
     family = MONOMIAL
     order = FIRST
   [../]
+  [flux]
+    order = CONSTANT
+    family = MONOMIAL
+    initial_condition = 0
+  []
 []
 
 [FVKernels]
@@ -169,6 +174,12 @@ velocity_interp_method = 'rc'
     coupled_variables = 'T_fluid'
     function = '159-2.72e-2*T_fluid+7.12e-6*T_fluid*T_fluid'
   [../]
+  [flux]
+    type = FunctorAux
+    functor = f_flux
+    variable = flux
+    execute_on = INITIAL
+  []
 []
 
 [FVBCs]
@@ -282,7 +293,7 @@ velocity_interp_method = 'rc'
     type = ParsedFunction
     expression = '0.4'
   [../]
-  [./flux]
+  [./f_flux]
     type = PiecewiseMultilinear
     data_file = ${flux_file}
   [../]

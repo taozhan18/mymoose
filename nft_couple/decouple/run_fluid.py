@@ -5,6 +5,7 @@ import netCDF4 as nc
 from tqdm.auto import tqdm
 import argparse
 
+T = np.load("./output/nft_Tfuel.npy")
 flux = np.load("./output/nft_Tfuel.npy")[:, 1, 1:, -1]
 
 
@@ -139,6 +140,10 @@ def main(n=2):
         outputs = read_e_to_np("./fluid_exodus.e")
         flux_all.append(flux)
         outputs_all.append(outputs)
+    flux_all = np.array(flux_all)
+    outputs_all = np.array(outputs_all)
+    print("flux: ", flux_all.shape)
+    print("output: ", outputs_all.shape)
     np.save("./output/flux_to_fluid", np.array(flux_all))
     np.save("./output/nft_Tfluid", np.array(outputs_all))
 

@@ -271,7 +271,7 @@ def read_e_to_np(file_path):
     return z_matrix
 
 
-def main(n=2):
+def main(n):
     # this file should be run in current file path
     phiBC_all = []
     T_fuel_all = []
@@ -307,6 +307,6 @@ def main(n=2):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate data")
-    parser.add_argument("--n", default="2", type=int, help="number of sample")
+    parser.add_argument("--n", default="1", type=int, help="number of sample")
     args = parser.parse_args()
     main(args.n)

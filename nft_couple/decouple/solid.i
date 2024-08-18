@@ -19,9 +19,14 @@ power_file = 'solidinp/phi.txt'
 []
 
 [AuxVariables]
+  [T_fluid]
+    initial_condition = 560
+  []
   [flux]
     order = CONSTANT
     family = MONOMIAL
+  [../]
+  [power]
   [../]
 []
 
@@ -35,9 +40,13 @@ power_file = 'solidinp/phi.txt'
     variable = T
   [../]
   [source]
-    type = HeatSource
+    # type = HeatSource
+    # variable = T
+    # function = power
+    type = CoupledForce
     variable = T
-    function = powerxy
+    v = power
+    coef = 1e8
   []
 []
 
@@ -50,6 +59,18 @@ power_file = 'solidinp/phi.txt'
     component = x
     boundary = right
     #execute_on = 'FINAL'
+  []
+  [T_fluid]
+    type = FunctorAux
+    functor = Ty
+    variable = T_fluid
+    execute_on = INITIAL
+  []
+  [power]
+    type = FunctorAux
+    functor = powerxy
+    variable = power
+    execute_on = INITIAL
   []
 []
 
@@ -65,7 +86,7 @@ power_file = 'solidinp/phi.txt'
     type = FunctorDirichletBC
     variable = T
     boundary = right
-    functor = Ty
+    functor = T_fluid
   [../]
 []
 
@@ -97,7 +118,7 @@ power_file = 'solidinp/phi.txt'
     data_file = ${Ty_file}
   [../]
   [./powerxy]
-    type = PiecewiseMultilinear
+    type = PiecewiseMulticonstant
     data_file = ${power_file}
   [../]
 []

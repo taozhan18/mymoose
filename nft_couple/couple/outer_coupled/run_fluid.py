@@ -5,6 +5,7 @@ import netCDF4 as nc
 from tqdm.auto import tqdm
 import argparse
 
+T = np.load("./output/nft_Tfuel.npy")
 flux = np.load("./output/nft_Tfuel.npy")[:, 1, 1:, -1]
 
 
