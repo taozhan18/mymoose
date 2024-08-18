@@ -24,6 +24,8 @@
     order = CONSTANT
     family = MONOMIAL
   [../]
+  [power]
+  [../]
 []
 
 [Kernels]
@@ -36,9 +38,13 @@
     variable = T
   [../]
   [source]
-    type = HeatSource
+    # type = HeatSource
+    # variable = T
+    # function = power
+    type = CoupledForce
     variable = T
-    function = 1e8 #powerxy
+    v = power
+    coef = 1e8
   []
 []
 
@@ -106,8 +112,8 @@
 [MultiApps]
   [sub_app]
     type = TransientMultiApp
-    positions = '0.0076 0 0'
-    input_files = 'fluid.i'
+    positions = '0.0 0 0'
+    input_files = 'neutron.i'
     sub_cycling = true
   []
 []
@@ -120,12 +126,20 @@
     from_multi_app = sub_app
 
     # The name of the variable in the sub-app
-    source_variable = T_fluid
+    source_variable = T
 
     # The name of the auxiliary variable in this app
     variable = T_fluid
-    from_boundaries = left
-    to_boundaries = right
+    from_blocks = fluid
+    # to_blocks = fluid
+  []
+
+  [pull_power]
+    type = MultiAppGeneralFieldNearestLocationTransfer
+    from_multi_app = sub_app
+    source_variable = u
+    variable = power
+    error_on_miss = true
   []
 
   [push_flux]
@@ -139,20 +153,33 @@
 
     # The name of the auxiliary variable in the sub-app
     variable = flux
-
-    from_boundaries = right
-    to_boundaries = left
     error_on_miss = true
+  []
+
+  [push_T]
+    type = MultiAppGeneralFieldNearestLocationTransfer
+    to_multi_app = sub_app
+    source_variable = T
+    variable = T
+    error_on_miss = true
+    # from_blocks = fuel
+    to_blocks = fuel
   []
 []
 
 [Executioner]
   type = Transient
-  start_time = 0.0
+  start_time = 0
   end_time = 5
-  num_steps = 32
+  #num_steps = 32
+  #dt = 0.1
 []
 
 [Outputs]
-  exodus = true
+  [exodus]
+    type = Exodus
+    sync_only = true
+    sync_times = '0. 0.3125 0.625 0.9375 1.25 1.5625 1.875 2.1875 2.5 2.8125 3.125 3.4375 3.75 4.0625 4.375 4.6875 5.'
+  []
 []
+

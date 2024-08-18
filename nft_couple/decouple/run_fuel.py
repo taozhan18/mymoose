@@ -23,10 +23,10 @@ def write_inp(base_file, out_file, replacements):
         file.write(src)
 
 
-def replacements(function, batch, Lx=0.0076, Ly=0.75, Lt=5, nx=8, ny=64, nt=32, bias_x=0, bias_y=0, bias_t=0, dim=2):
-    # phi: Lx=0.0076, Ly=0.75, Lt=5, nx=8, ny=64, nt=32
-    # Tfuel: Lx=0.0076, Ly=0.75, Lt=5, nx=8, ny=64, nt=32
-    # Tfluid: Lx=0.0114, Ly=0.75, Lt=5, nx=12, ny=64, nt=32, bias_y = 0.0075
+def replacements(function, batch, Lx=0.0076, Ly=0.75, Lt=5, nx=8, ny=64, nt=16, bias_x=0, bias_y=0, bias_t=0, dim=2):
+    # phi: Lx=0.0076, Ly=0.75, Lt=5, nx=8, ny=64, nt=16
+    # Tfuel: Lx=0.0076, Ly=0.75, Lt=5, nx=8, ny=64, nt=16
+    # Tfluid: Lx=0.0114, Ly=0.75, Lt=5, nx=12, ny=64, nt=16, bias_y = 0.0075
     dx = Lx / nx
     dy = Ly / ny
     dt = Lt / nt
@@ -79,7 +79,8 @@ def gen_Tf(batch, x, *arg):
         return T_fluid[batch]
     except:
         nx, ny, nt = x.shape
-        return np.ones((ny, nt)) * 560
+        cos_z = 200 * np.sin(np.linspace(0, 3.14, 80))[:65].reshape(65, 1)
+        return np.ones((ny, nt)) * 560 + cos_z
 
 
 def gen_neu_inp(batch):
@@ -91,7 +92,7 @@ def gen_neu_inp(batch):
         Lt=5,
         nx=8,
         ny=64,
-        nt=32,
+        nt=16,
         bias_x=0,
         bias_y=0,
         bias_t=0,
@@ -105,7 +106,7 @@ def gen_neu_inp(batch):
         Lt=5,
         nx=12,
         ny=64,
-        nt=32,
+        nt=16,
         bias_x=0.0076,
         bias_y=0,
         bias_t=0,
@@ -192,10 +193,16 @@ def main(n=2):
         # 打印标准输出和错误输出
         # print(result.stdout)  # 打印命令的标准输出
         print(result.stderr)  # 打印命令的错误输出（如果有）
-        outputs = read_e_to_np("./solid_out.e")
+        outputs = read_e_to_np("./solid_exodus.e")
         phi_all.append(phi)
         Tfluid_all.append(Tfluid)
         outputs_all.append(outputs)
+    phi_all = np.array(phi_all)
+    Tfluid_all = np.array(Tfluid_all)
+    outputs_all = np.array(outputs_all)
+    print("T_fuel: ", outputs_all.shape)
+    print("T_fluid: ", Tfluid_all.shape)
+    print("phi_all: ", phi_all.shape)
     np.save("./output/n_to_fuel", np.array(phi_all))
     np.save("./output/fluid_to_fuel", np.array(Tfluid_all))
     np.save("./output/nft_Tfuel", np.array(outputs_all))

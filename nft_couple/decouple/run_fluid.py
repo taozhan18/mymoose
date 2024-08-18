@@ -17,10 +17,10 @@ def write_inp(base_file, out_file, replacements):
         file.write(src)
 
 
-def replacements(function, batch, Lx=0.0076, Ly=0.75, Lt=5, nx=8, ny=64, nt=32, bias_x=0, bias_y=0, bias_t=0, dim=2):
-    # phi: Lx=0.0076, Ly=0.75, Lt=5, nx=8, ny=64, nt=32
-    # Tfuel: Lx=0.0076, Ly=0.75, Lt=5, nx=8, ny=64, nt=32
-    # Tfluid: Lx=0.0114, Ly=0.75, Lt=5, nx=12, ny=64, nt=32, bias_y = 0.0075
+def replacements(function, batch, Lx=0.0076, Ly=0.75, Lt=5, nx=8, ny=64, nt=16, bias_x=0, bias_y=0, bias_t=0, dim=2):
+    # phi: Lx=0.0076, Ly=0.75, Lt=5, nx=8, ny=64, nt=16
+    # Tfuel: Lx=0.0076, Ly=0.75, Lt=5, nx=8, ny=64, nt=16
+    # Tfluid: Lx=0.0114, Ly=0.75, Lt=5, nx=12, ny=64, nt=16, bias_y = 0.0075
     dx = Lx / nx
     dy = Ly / ny
     dt = Lt / nt
@@ -62,13 +62,13 @@ def gen_neu_inp(batch):
         Lt=5,
         nx=12,
         ny=64,
-        nt=32,
+        nt=16,
         bias_x=0,
         bias_y=0,
         bias_t=0,
         dim=1,
     )
-    # replacements_D_fluid = replacements(function=gen_D_fluid, Lx=0.0076, Ly=0.75, Lt=5, nx=12, ny=64, nt=32, bias_x = 0, bias_y = 0, bias_t = 0)
+    # replacements_D_fluid = replacements(function=gen_D_fluid, Lx=0.0076, Ly=0.75, Lt=5, nx=12, ny=64, nt=16, bias_x = 0, bias_y = 0, bias_t = 0)
     write_inp("./inp1D_base.txt", "./fluidinp/flux.txt", replacements_flux)
     inp_file = ["'./fluidinp/flux.txt'"]
     replacements_inp = {"flux_file": inp_file[0]}
@@ -130,13 +130,13 @@ def main(n=2):
     for i in tqdm(range(n), desc="calculate loop time step", total=n):
         flux = gen_neu_inp(i)
         # 构建命令
-        command = ["mpiexec", "-n", "2", "../../workspace-opt", "-i", "fluid.i"]
+        command = ["mpiexec", "-n", "1", "../../workspace-opt", "-i", "fluid.i"]
         # 执行命令
         result = subprocess.run(command, capture_output=True, text=True)
         # 打印标准输出和错误输出
         # print(result.stdout)  # 打印命令的标准输出
         print(result.stderr)  # 打印命令的错误输出（如果有）
-        outputs = read_e_to_np("./fluid_out.e")
+        outputs = read_e_to_np("./fluid_exodus.e")
         flux_all.append(flux)
         outputs_all.append(outputs)
     np.save("./output/flux_to_fluid", np.array(flux_all))

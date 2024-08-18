@@ -1,6 +1,4 @@
-phi_in = 'neutroninp/phi.txt'
-sigma_af_fuel = 'neutroninp/sigma_af_fuel.txt'
-sigma_af_fluid = 'neutroninp/sigma_af_fluid.txt'
+phi_in = './outer_coupled/neutroninp/phi.txt'
 v = 2.416
 
 [Mesh]
@@ -14,17 +12,19 @@ v = 2.416
   []
 []
 
-#[AuxVariables]
-#  [./T_fuel]
-#    block = fuel
+[AuxVariables]
+ [./T]
+ [../]
+ [./aux_sigma_af]
+ [../]
+ [flux]
+    order = CONSTANT
+    family = MONOMIAL
+    block = fuel
+ [../]
+#  [./power]
 #  [../]
-#  [./T_fluid]
-#    block = fluid
-#  [../]
-#  [./rho_fluid]
-#    block = fluid
-#  [../]
-#[]
+[]
 
 [Kernels]
   [td]
@@ -65,50 +65,66 @@ v = 2.416
   # []
 []
 
-#[AuxKernels]
-  #[./compute_aux_T_fuel]
-  #  type = FunctionAux
-  #  variable = T_fuel
-  #  function = f_T_fuel
-  #  execute_on = INITIAL
-  #[../]
-  #[./compute_aux_T_fluid]
-  #  type = FunctionAux
-  #  variable = T_fluid
-  #  function = f_T_fuel
-  #  execute_on = INITIAL
-  #[../]
-  #[./compute_aux_density]
+[AuxKernels]
+  [./compute_aux_sigma_af_fuel]
+   type = ParsedAux
+   variable = aux_sigma_af
+   coupled_variables = T
+   expression = '2.416 * 583.5 * 1.305 * 1.602 * 0.1 - (13.47 * (T- 560) / (900 - 560) + 7.53) * 2.1479 * 1.602 + 0.185 * 6.6072 * 0.1 - 680.9 * 1.305 * 1.602 * 0.1'
+   block = fuel
+  [../]
+  [./compute_aux_sigma_af_fluid]
+   type = ParsedAux
+   variable = aux_sigma_af
+   coupled_variables = T
+   expression = '-(20 + 20 * (T - 560) / (800 - 560))'
+   block = fluid
+  [../]
+  # [./compute_aux_power]
   #  type = ParsedAux
-  #  variable = rho_fluid
-  #  coupled_variables = 'T_fluid'
-  #  expression = '48.14*30/T_fluid/(1+0.4446*30/T_fluid^1.2)'
-  #[../]
-#[]
+  #  variable = power
+  #  coupled_variables = u
+  #  expression = '1e8*u'
+  # [../]
+[]
 
 [Materials]
-  [compute_Dfluid]
+  [./compute_Dfluid]
     type = GenericConstantMaterial
     prop_names = 'D_fluid'
     prop_values = 0.01
     block = 'fluid'
-  []
-  [compute_Dfuel]
+  [../]
+  [./compute_Dfuel]
     type = GenericConstantMaterial
     prop_names = 'D_fuel'
     prop_values = 0.008249
     block = 'fuel'
-  []
+  [../]
+  # [./compute_sigma_af_fuel]
+  #   type = GenericFunctionMaterial
+  #   prop_names = 'sigma_af_fuel'
+  #   prop_values = aux_sigma_af_fuel
+  #   block = 'fuel'
+  # [../]
+  # [./compute_sigma_af_fluid]
+  #   type = GenericFunctionMaterial
+  #   prop_names = 'sigma_af_fluid'
+  #   prop_values = aux_sigma_af_fluid
+  #   block = 'fluid'
+  # [../]
   [./compute_sigma_af_fuel]
-    type = GenericFunctionMaterial
-    prop_names = 'sigma_af_fuel'
-    prop_values = 'f_sigma_af_fuel'
+    type = ParsedMaterial
+    property_name = sigma_af_fuel
+    coupled_variables = T
+    expression = '2.416 * 583.5 * 1.305 * 1.602 * 0.1 - (13.47 * (T - 560) / (900 - 560) + 7.53) * 2.1479 * 1.602 + 0.185 * 6.6072 * 0.1 - 680.9 * 1.305 * 1.602 * 0.1'
     block = 'fuel'
   [../]
   [./compute_sigma_af_fluid]
-    type = GenericFunctionMaterial
-    prop_names = 'sigma_af_fluid'
-    prop_values = 'f_sigma_af_fluid'
+    type = ParsedMaterial
+    property_name = sigma_af_fluid
+    coupled_variables = T
+    expression = '-(20 + 20 * (T - 560) / (800 - 560))'
     block = 'fluid'
   [../]
 []
@@ -121,14 +137,6 @@ v = 2.416
   [./phi_BC]
     type = PiecewiseMultilinear
     data_file = ${phi_in}
-  [../]
-  [./f_sigma_af_fuel]
-    type = PiecewiseMultilinear
-    data_file = ${sigma_af_fuel}
-  [../]
-  [./f_sigma_af_fluid]
-    type = PiecewiseMultilinear
-    data_file = ${sigma_af_fluid}
   [../]
 []
 
@@ -170,14 +178,60 @@ v = 2.416
   []
 []
 
+[MultiApps]
+  [sub_app]
+    type = TransientMultiApp
+    positions = '0.0076 0 0'
+    input_files = 'fluid.i'
+    sub_cycling = true
+  []
+[]
+
+[Transfers]
+  [push_flux]
+    type = MultiAppGeneralFieldNearestLocationTransfer
+
+    # Transfer from the sub-app to this app
+    to_multi_app = sub_app
+
+    # The name of the variable in the sub-app
+    source_variable = flux
+
+    # The name of the auxiliary variable in this app
+    variable = flux
+    error_on_miss = true
+  []
+
+  [pull_temp]
+    type = MultiAppGeneralFieldNearestLocationTransfer
+
+    # Transfer from the sub-app to this app
+    from_multi_app = sub_app
+
+    # The name of the variable in sub app
+    source_variable = T_fluid
+
+    # The name of the auxiliary variable in this
+    variable = T
+    error_on_miss = true
+    # from_blocks = fluid
+    to_blocks = fluid
+  []
+[]
+
 [Executioner]
   type = Transient
   start_time = 0
   end_time = 5
-  num_steps = 32
+  #num_steps = 32
   #dt = 0.1
 []
 
 [Outputs]
-  exodus = true
+  [exodus]
+    type = Exodus
+    sync_only = true
+    sync_times = '0. 0.3125 0.625 0.9375 1.25 1.5625 1.875 2.1875 2.5 2.8125 3.125 3.4375 3.75 4.0625 4.375 4.6875 5.'
+  []
 []
+

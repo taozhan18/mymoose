@@ -12,6 +12,10 @@
     initial_condition = 948
   []
 []
+[AuxVariables]
+  [flux_BC]
+  []
+[]
 
 [Kernels]
   [heat_conduction]
@@ -79,6 +83,11 @@
     type = ParsedFunction
     expression = '9.2+0.0175*(t-273)-2e-6*(t-273)*(t-273)'  # 热导率随温度变化的函数
   [../]
+  # [./flux_BC]
+  #   type = PiecewiseMulticonstant
+  #   direction = 'left right'
+  #   data_file = ${flux}
+  # [../]
 []
 
 [BCs]
@@ -101,10 +110,10 @@
     value = 0.0
   [../]
   [./flux]
-    type = NeumannBC
+    type = FunctorDirichletBC#NeumannBC
     variable = T
     boundary = 'matrixin_b'
-    value = 1e5 # 这里设置你的热通量值，可以是常数或函数
+    functor = flux_BC # 这里设置你的热通量值，可以是常数或函数
   [../]
   [./Pressure]
     [./inter]
@@ -135,6 +144,104 @@
   []
 []
 
+[ICs]
+  [./ic_flux_1]
+    type = ConstantIC
+    variable = flux_BC
+    value = 845.0
+    block = '101'
+  [../]
+  [./ic_flux_2]
+    type = ConstantIC
+    variable = flux_BC
+    value = 826.0
+    block = '102'
+  [../]
+  [./ic_flux_3]
+    type = ConstantIC
+    variable = flux_BC
+    value = 838.0
+    block = '103'
+  [../]
+  [./ic_flux_4]
+    type = ConstantIC
+    variable = flux_BC
+    value = 814.0
+    block = '104'
+  [../]
+  [./ic_flux_5]
+    type = ConstantIC
+    variable = flux_BC
+    value = 814.0
+    block = '105'
+  [../]
+  [./ic_flux_6]
+    type = ConstantIC
+    variable = flux_BC
+    value = 819.0
+    block = '106'
+  [../]
+  [./ic_flux_7]
+    type = ConstantIC
+    variable = flux_BC
+    value = 768.0
+    block = '107'
+  [../]
+  [./ic_flux_8]
+    type = ConstantIC
+    variable = flux_BC
+    value = 794.0
+    block = '108'
+  [../]
+  [./ic_flux_9]
+    type = ConstantIC
+    variable = flux_BC
+    value = 818.0
+    block = '109'
+  [../]
+  [./ic_flux_10]
+    type = ConstantIC
+    variable = flux_BC
+    value = 848.0
+    block = '110'
+  [../]
+  [./ic_flux_11]
+    type = ConstantIC
+    variable = flux_BC
+    value = 846.0
+    block = '111'
+  [../]
+  [./ic_flux_12]
+    type = ConstantIC
+    variable = flux_BC
+    value = 844.0
+    block = '112'
+  [../]
+  [./ic_flux_13]
+    type = ConstantIC
+    variable = flux_BC
+    value = 787.0
+    block = '113'
+  [../]
+  [./ic_flux_14]
+    type = ConstantIC
+    variable = flux_BC
+    value = 797.0
+    block = '114'
+  [../]
+  [./ic_flux_15]
+    type = ConstantIC
+    variable = flux_BC
+    value = 835.0
+    block = '115'
+  [../]
+  [./ic_flux_16]
+    type = ConstantIC
+    variable = flux_BC
+    value = 842.0
+    block = '116'
+  [../]
+[]
 
 [Preconditioning]
   [smp]

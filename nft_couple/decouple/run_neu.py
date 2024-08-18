@@ -12,6 +12,10 @@ try:
 except:
     read_from_other_field = False
     print("using constant temperature")
+try:
+    phi_BC = np.load("./output/phiBC_to_phi.npy")
+except:
+    print("using new phi_BC")
 
 
 def write_inp(base_file, out_file, replacements):
@@ -24,11 +28,11 @@ def write_inp(base_file, out_file, replacements):
 
 
 def replacements(
-    function, batch, tag="T", Lx=0.0076, Ly=0.75, Lt=5, nx=8, ny=64, nt=32, bias_x=0, bias_y=0, bias_t=0, dim=2
+    function, batch, tag="T", Lx=0.0076, Ly=0.75, Lt=5, nx=8, ny=64, nt=16, bias_x=0, bias_y=0, bias_t=0, dim=2
 ):
-    # phi: Lx=0.0076, Ly=0.75, Lt=5, nx=8, ny=64, nt=32
-    # Tfuel: Lx=0.0076, Ly=0.75, Lt=5, nx=8, ny=64, nt=32
-    # Tfluid: Lx=0.0114, Ly=0.75, Lt=5, nx=12, ny=64, nt=32, bias_y = 0.0075
+    # phi: Lx=0.0076, Ly=0.75, Lt=5, nx=8, ny=64, nt=16
+    # Tfuel: Lx=0.0076, Ly=0.75, Lt=5, nx=8, ny=64, nt=16
+    # Tfluid: Lx=0.0114, Ly=0.75, Lt=5, nx=12, ny=64, nt=16, bias_y = 0.0075
     dx = Lx / nx
     dy = Ly / ny
     dt = Lt / nt
@@ -73,72 +77,79 @@ def replacements(
     return replacements, inputs
 
 
-def gen_phi_BC(*arg):
-    def generate_x_coords(min_val, max_val, n_points, threshold):
-        x_coords = []
-        while len(x_coords) < n_points:
-            x = np.random.uniform(min_val, max_val)
-            if (
-                (len(x_coords) == 0 or all(abs(x - xi) > threshold for xi in x_coords))
-                and abs(x - min_val) > threshold
-                and abs(x - max_val) > threshold
-            ):
-                x_coords.append(x)
-        return sorted(x_coords)
+def gen_phi_BC(batch, *arg):
+    try:
+        return phi_BC[batch]
+    except:
 
-    phi_all = []
-    time_steps = 32
-    while True:
-        # 时间步设置
+        def generate_x_coords(min_val, max_val, n_points, threshold):
+            x_coords = []
+            while len(x_coords) < n_points:
+                x = np.random.uniform(min_val, max_val)
+                if (
+                    (len(x_coords) == 0 or all(abs(x - xi) > threshold for xi in x_coords))
+                    and abs(x - min_val) > threshold
+                    and abs(x - max_val) > threshold
+                ):
+                    x_coords.append(x)
+            return sorted(x_coords)
 
-        # 生成五个x坐标和y坐标
-        x_random = generate_x_coords(0, 0.75, 5, 0.075)
-        y_random = np.random.uniform(0.5, 3, 5)
-        max_index = np.argmax(y_random)
-        # 固定点
-        x_fixed = np.array([0, 0.75])
-        y_fixed = np.array([0, 0])
+        phi_all = []
+        time_steps = 16
+        while True:
+            # 时间步设置
 
-        # 合并所有点
-        x_all = np.concatenate(([x_fixed[0]], x_random, [x_fixed[1]]))
-        y_all = np.concatenate(([y_fixed[0]], y_random, [y_fixed[1]]))
+            # 生成五个x坐标和y坐标
+            x_random = generate_x_coords(0, 0.75, 5, 0.075)
+            y_random = np.random.uniform(0.5, 3, 5)
+            max_index = np.argmax(y_random)
+            # 固定点
+            x_fixed = np.array([0, 0.75])
+            y_fixed = np.array([0.5, 0.5])
 
-        # 拟合初始样条曲线
-        spline = make_interp_spline(x_all, y_all)
+            # 合并所有点
+            x_all = np.concatenate(([x_fixed[0]], x_random, [x_fixed[1]]))
+            y_all = np.concatenate(([y_fixed[0]], y_random, [y_fixed[1]]))
 
-        # 生成曲线点
-        x_spline = np.linspace(0, 0.75, 65)
-        y_spline = spline(x_spline)
-        if np.all(y_spline >= 0):
-            break
-    phi_all.append(y_spline)
+            # 拟合初始样条曲线
+            spline = make_interp_spline(x_all, y_all)
 
-    # 随着时间增加峰值
-    max_increase = np.random.uniform(0.1, 0.9)
-    for t in range(1, time_steps):
-        peak_increase = np.random.uniform(0.1, max_increase)
-        factor = np.random.uniform(0.1, 0.7, 5)
-        y_random += factor * peak_increase
-        y_random[max_index] += (1 - factor[max_index]) * peak_increase  # 增加峰值
-        y_all = np.concatenate(([y_fixed[0]], y_random, [y_fixed[1]]))  # 更新y坐标
-        spline = make_interp_spline(x_all, y_all)  # 重新拟合样条曲线
-        y_spline = np.abs(spline(x_spline))  # 生成曲线点
-        phi_all.append(np.abs(y_spline))
-    return np.array(phi_all).transpose(1, 0)
+            # 生成曲线点
+            x_spline = np.linspace(0, 0.75, 65)
+            y_spline = spline(x_spline)
+            if np.all(y_spline >= 0):
+                break
+        phi_all.append(y_spline)
+
+        # 随着时间增加峰值
+        max_increase = np.random.uniform(0.1, 0.9)
+        for t in range(1, time_steps):
+            peak_increase = np.random.uniform(0.1, max_increase)
+            factor = np.random.uniform(0.1, 0.7, 5)
+            y_random += factor * peak_increase
+            y_random[max_index] += (1 - factor[max_index]) * peak_increase  # 增加峰值
+            y_all = np.concatenate(([y_fixed[0]], y_random, [y_fixed[1]]))  # 更新y坐标
+            spline = make_interp_spline(x_all, y_all)  # 重新拟合样条曲线
+            y_spline = np.abs(spline(x_spline))  # 生成曲线点
+            phi_all.append(np.abs(y_spline))
+        phi_all = np.array(phi_all).transpose(1, 0)
+        return phi_all
 
 
 def gen_T_fuel(batch, x, *arg):
     try:
         return T_fuel[batch]
     except:
-        return np.ones_like(x) * 560
+        cos_z = 400 * np.sin(np.linspace(0, 3.14, 80))[:65].reshape(1, 65, 1)
+        return np.ones_like(x) * 560 + cos_z
 
 
 def gen_T_fluid(batch, x, *arg):
     try:
         return T_fluid[batch]
     except:
-        return np.ones_like(x) * 560
+        cos_z = 200 * np.sin(np.linspace(0, 3.14, 80))[:65].reshape(1, 65, 1)
+        return np.ones_like(x) * 560 + cos_z
 
 
 def gen_sigma_af_fluid(batch, x, y, z):
@@ -166,7 +177,7 @@ def gen_neu_inp(batch):
         Lt=5,
         nx=8,
         ny=64,
-        nt=32,
+        nt=16,
         bias_x=0,
         bias_y=0,
         bias_t=0,
@@ -180,7 +191,7 @@ def gen_neu_inp(batch):
         Lt=5,
         nx=12,
         ny=64,
-        nt=32,
+        nt=16,
         bias_x=0.0076,
         bias_y=0,
         bias_t=0,
@@ -193,7 +204,7 @@ def gen_neu_inp(batch):
         Lt=5,
         nx=8,
         ny=64,
-        nt=32,
+        nt=16,
         bias_x=0,
         bias_y=0,
         bias_t=0,
@@ -275,19 +286,27 @@ def main(n=2):
         # 打印标准输出和错误输出
         # print(result.stdout)  # 打印命令的标准输出
         print(result.stderr)  # 打印命令的错误输出（如果有）
-        outputs = read_e_to_np("./neutron_out.e")
+        outputs = read_e_to_np("./neutron_exodus.e")
         phiBC_all.append(phiBC)
         T_fuel_all.append(Tfuel)
         T_fluid_all.append(Tfluid)
         outputs_all.append(outputs)
+    phiBC_all = np.array(phiBC_all)
+    T_fuel_all = np.array(T_fuel_all)
+    T_fluid_all = np.array(T_fluid_all)
+    outputs_all = np.array(outputs_all)
+    print("neu: ", outputs_all.shape)
+    print("T_fuel: ", T_fuel_all.shape)
+    print("T_fluid: ", T_fluid_all.shape)
+    print("phiBC_all: ", phiBC_all.shape)
     np.save("./output/phiBC_to_phi", np.array(phiBC_all))
     np.save("./output/Tfuel_to_phi", np.array(T_fuel_all))
-    np.save("./output/Tfluid_to_phi", np.array(T_fuel_all))
+    np.save("./output/Tfluid_to_phi", np.array(T_fluid_all))
     np.save("./output/nft_phi", np.array(outputs_all))
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate data")
-    parser.add_argument("--n", default="2000", type=int, help="number of sample")
+    parser.add_argument("--n", default="2", type=int, help="number of sample")
     args = parser.parse_args()
     main(args.n)
