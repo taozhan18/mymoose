@@ -80,6 +80,7 @@ def gen_Tf(batch, x, *arg):
     except:
         nx, ny, nt = x.shape
         cos_z = 200 * np.sin(np.linspace(0, 3.14, 80))[:65].reshape(65, 1)
+        return np.ones((ny, nt)) * 560
         return np.ones((ny, nt)) * 560 + cos_z
 
 

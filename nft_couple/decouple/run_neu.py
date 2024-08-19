@@ -141,7 +141,8 @@ def gen_T_fuel(batch, x, *arg):
         return T_fuel[batch]
     except:
         cos_z = 400 * np.sin(np.linspace(0, 3.14, 80))[:65].reshape(1, 65, 1)
-        return np.ones_like(x) * 560 + cos_z
+        return np.ones_like(x) * 560
+        # return np.ones_like(x) * 560 + cos_z
 
 
 def gen_T_fluid(batch, x, *arg):
@@ -149,6 +150,7 @@ def gen_T_fluid(batch, x, *arg):
         return T_fluid[batch]
     except:
         cos_z = 200 * np.sin(np.linspace(0, 3.14, 80))[:65].reshape(1, 65, 1)
+        return np.ones_like(x) * 560
         return np.ones_like(x) * 560 + cos_z
 
 

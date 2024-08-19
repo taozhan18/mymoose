@@ -112,6 +112,7 @@ def read_e_to_np(file_path):
     time_steps = dataset.variables["time_whole"][:]
     num_time_steps = len(time_steps)
     T_fluid = np.array(dataset.variables["vals_elem_var1eb1"]).reshape(1, num_time_steps, 64, 12)
+    print(np.min(T_fluid), np.max(T_fluid))
     pressure = np.array(dataset.variables["vals_elem_var2eb1"]).reshape(1, num_time_steps, 64, 12)
     vel_x = np.array(dataset.variables["vals_elem_var3eb1"]).reshape(1, num_time_steps, 64, 12)
     vel_y = np.array(dataset.variables["vals_elem_var4eb1"]).reshape(1, num_time_steps, 64, 12)
@@ -131,7 +132,7 @@ def main(n=2):
     for i in tqdm(range(n), desc="calculate loop time step", total=n):
         flux = gen_neu_inp(i)
         # 构建命令
-        command = ["mpiexec", "-n", "1", "../../workspace-opt", "-i", "fluid.i"]
+        command = ["mpiexec", "-n", "2", "../../workspace-opt", "-i", "fluid.i"]
         # 执行命令
         result = subprocess.run(command, capture_output=True, text=True)
         # 打印标准输出和错误输出
@@ -150,6 +151,6 @@ def main(n=2):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate data")
-    parser.add_argument("--n", default="2000", type=int, help="number of sample")
+    parser.add_argument("--n", default="1", type=int, help="number of sample")
     args = parser.parse_args()
     main(args.n)

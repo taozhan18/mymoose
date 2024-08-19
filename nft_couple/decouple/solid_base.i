@@ -27,7 +27,7 @@ power_file = %(power_file)s
     family = MONOMIAL
   [../]
   [power]
-  [../]
+  []
 []
 
 [Kernels]
@@ -58,19 +58,16 @@ power_file = %(power_file)s
     diffusion_variable = T
     component = x
     boundary = right
-    #execute_on = 'FINAL'
   []
   [T_fluid]
     type = FunctorAux
     functor = Ty
     variable = T_fluid
-    execute_on = INITIAL
   []
-  [power]
+  [aux_power]
     type = FunctorAux
     functor = powerxy
     variable = power
-    execute_on = INITIAL
   []
 []
 
@@ -118,7 +115,7 @@ power_file = %(power_file)s
     data_file = ${Ty_file}
   [../]
   [./powerxy]
-    type = PiecewiseMulticonstant
+    type = PiecewiseMultilinear
     data_file = ${power_file}
   [../]
 []

@@ -178,7 +178,6 @@ velocity_interp_method = 'rc'
     type = FunctorAux
     functor = f_flux
     variable = flux
-    execute_on = INITIAL
   []
 []
 
