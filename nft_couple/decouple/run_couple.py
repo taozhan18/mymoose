@@ -1,19 +1,21 @@
 import argparse
 import subprocess
 import numpy as np
+from tqdm.auto import tqdm
 
 
 def L2_norm(array):
-    array = array.reshape(-1)
-    norm = np.sum(array**2) ** 0.5
-    return norm
+    b, c = array.shape[0], array.shape[1]
+    array = array.reshape(b, c, -1)
+    norm = np.sum(np.sum(array**2, axis=2) ** 0.5)
+    return norm / b / c
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="outer couple")
     parser.add_argument("--n", default="20", type=int, help="number of outer couple")
     args = parser.parse_args()
-    for i in range(args.n):
+    for i in tqdm(range(args.n), desc="calculate loop time step", total=args.n):
         command = ["python", "run_neu.py"]
         result = subprocess.run(command, capture_output=True, text=True)
         # 打印标准输出和错误输出

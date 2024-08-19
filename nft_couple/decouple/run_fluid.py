@@ -1,3 +1,5 @@
+import os
+import shutil
 import numpy as np
 from scipy.interpolate import make_interp_spline
 import subprocess
@@ -5,8 +7,12 @@ import netCDF4 as nc
 from tqdm.auto import tqdm
 import argparse
 
-T = np.load("./output/nft_Tfuel.npy")
+relaxation = 0.5
 flux = np.load("./output/nft_Tfuel.npy")[:, 1, 1:, -1]
+try:
+    flux_old = np.load("./output/nft_Tfuel_old.npy")[:, 1, 1:, -1]
+except:
+    flux_old = flux
 
 
 def write_inp(base_file, out_file, replacements):
@@ -51,7 +57,7 @@ def replacements(function, batch, Lx=0.0076, Ly=0.75, Lt=5, nx=8, ny=64, nt=16, 
 
 
 def gen_flux(batch, *arg):
-    return flux[batch].transpose(1, 0)
+    return (flux[batch] * (relaxation) + (1 - relaxation) * flux_old[batch]).transpose(1, 0)
 
 
 def gen_neu_inp(batch):
@@ -112,7 +118,7 @@ def read_e_to_np(file_path):
     time_steps = dataset.variables["time_whole"][:]
     num_time_steps = len(time_steps)
     T_fluid = np.array(dataset.variables["vals_elem_var1eb1"]).reshape(1, num_time_steps, 64, 12)
-    print(np.min(T_fluid), np.max(T_fluid))
+    # print(np.min(T_fluid), np.max(T_fluid))
     pressure = np.array(dataset.variables["vals_elem_var2eb1"]).reshape(1, num_time_steps, 64, 12)
     vel_x = np.array(dataset.variables["vals_elem_var3eb1"]).reshape(1, num_time_steps, 64, 12)
     vel_y = np.array(dataset.variables["vals_elem_var4eb1"]).reshape(1, num_time_steps, 64, 12)
@@ -123,6 +129,17 @@ def read_e_to_np(file_path):
     # print("the shape is: ", num_time_steps, len(unique_x), len(unique_y))
     z_matrix = np.concatenate((T_fluid, pressure, vel_x, vel_y), axis=0).transpose(0, 1, 3, 2)
     return z_matrix
+
+
+def rename(original_file_path, new_file_path):
+    if os.path.exists(original_file_path):
+        # 如果原始文件存在，检查新文件是否存在
+        if os.path.exists(new_file_path):
+            # 如果新文件存在，先删除它
+            os.remove(new_file_path)
+
+        # 重命名文件
+        shutil.move(original_file_path, new_file_path)
 
 
 def main(n=2):
@@ -145,7 +162,9 @@ def main(n=2):
     outputs_all = np.array(outputs_all)
     print("flux: ", flux_all.shape)
     print("output: ", outputs_all.shape)
+    rename("./output/flux_to_fluid.npy", "./output/flux_to_fluid_old.npy")
     np.save("./output/flux_to_fluid", np.array(flux_all))
+    rename("./output/nft_Tfluid.npy", "./output/nft_Tfluid_old.npy")
     np.save("./output/nft_Tfluid", np.array(outputs_all))
 
 

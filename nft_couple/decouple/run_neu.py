@@ -1,3 +1,5 @@
+import os
+import shutil
 import numpy as np
 from scipy.interpolate import make_interp_spline
 import subprocess
@@ -5,10 +7,17 @@ import netCDF4 as nc
 from tqdm.auto import tqdm
 import argparse
 
+relaxation = 0.5
 try:
     read_from_other_field = True
     T_fuel = np.load("./output/nft_Tfuel.npy")[:, 0, 1:].transpose(0, 2, 3, 1)
     T_fluid = np.load("./output/nft_Tfluid.npy")[:, 0, 1:].transpose(0, 2, 3, 1)
+    try:
+        T_fuel_old = np.load("./output/nft_Tfuel_old.npy")[:, 0, 1:].transpose(0, 2, 3, 1)
+        T_fluid_old = np.load("./output/nft_Tfluid_old.npy")[:, 0, 1:].transpose(0, 2, 3, 1)
+    except:
+        T_fuel_old = T_fuel
+        T_fluid_old = T_fluid
 except:
     read_from_other_field = False
     print("using constant temperature")
@@ -138,19 +147,19 @@ def gen_phi_BC(batch, *arg):
 
 def gen_T_fuel(batch, x, *arg):
     try:
-        return T_fuel[batch]
+        return T_fuel[batch] * (relaxation) + (1 - relaxation) * T_fuel_old[batch]
     except:
         cos_z = 400 * np.sin(np.linspace(0, 3.14, 80))[:65].reshape(1, 65, 1)
-        return np.ones_like(x) * 560
-        # return np.ones_like(x) * 560 + cos_z
+        # return np.ones_like(x) * 560
+        return np.ones_like(x) * 560 + cos_z
 
 
 def gen_T_fluid(batch, x, *arg):
     try:
-        return T_fluid[batch]
+        return T_fluid[batch] * (relaxation) + (1 - relaxation) * T_fluid_old[batch]
     except:
         cos_z = 200 * np.sin(np.linspace(0, 3.14, 80))[:65].reshape(1, 65, 1)
-        return np.ones_like(x) * 560
+        # return np.ones_like(x) * 560
         return np.ones_like(x) * 560 + cos_z
 
 
@@ -273,6 +282,17 @@ def read_e_to_np(file_path):
     return z_matrix
 
 
+def rename(original_file_path, new_file_path):
+    if os.path.exists(original_file_path):
+        # 如果原始文件存在，检查新文件是否存在
+        if os.path.exists(new_file_path):
+            # 如果新文件存在，先删除它
+            os.remove(new_file_path)
+
+        # 重命名文件
+        shutil.move(original_file_path, new_file_path)
+
+
 def main(n):
     # this file should be run in current file path
     phiBC_all = []
@@ -301,9 +321,13 @@ def main(n):
     print("T_fuel: ", T_fuel_all.shape)
     print("T_fluid: ", T_fluid_all.shape)
     print("phiBC_all: ", phiBC_all.shape)
+    rename("./output/phiBC_to_phi.npy", "./output/phiBC_to_phi_old.npy")
     np.save("./output/phiBC_to_phi", np.array(phiBC_all))
+    rename("./output/Tfuel_to_phi.npy", "./output/Tfuel_to_phi_old.npy")
     np.save("./output/Tfuel_to_phi", np.array(T_fuel_all))
+    rename("./output/Tfluid_to_phi.npy", "./output/Tfluid_to_phi_old.npy")
     np.save("./output/Tfluid_to_phi", np.array(T_fluid_all))
+    rename("./output/nft_phi.npy", "./output/nft_phi_old.npy")
     np.save("./output/nft_phi", np.array(outputs_all))
 
 

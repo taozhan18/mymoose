@@ -46,7 +46,7 @@ power_file = 'solidinp/phi.txt'
     type = CoupledForce
     variable = T
     v = power
-    coef = 1e8
+    coef = 1e7
   []
 []
 

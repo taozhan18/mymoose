@@ -1,3 +1,5 @@
+import os
+import shutil
 import numpy as np
 from scipy.interpolate import make_interp_spline
 import subprocess
@@ -5,10 +7,19 @@ import netCDF4 as nc
 from tqdm.auto import tqdm
 import argparse
 
+relaxation = 0.5
 phi = np.load("./output/nft_phi.npy")
+try:
+    phi_old = np.load("./output/nft_phi_old.npy")
+except:
+    phi_old = phi
 try:
     read_from_other_field = True
     T_fluid = np.load("./output/nft_Tfluid.npy")[:, 0, 1:, 0].transpose(0, 2, 1)  # b, 64, nt
+    try:
+        T_fluid_old = np.load("./output/nft_Tfluid_old.npy")[:, 0, 1:, 0].transpose(0, 2, 1)  # b, 64, nt
+    except:
+        T_fluid_old = T_fluid
 except:
     read_from_other_field = False
     print("using constant fluid temperature")
@@ -76,11 +87,11 @@ def gen_power(i):
 
 def gen_Tf(batch, x, *arg):
     try:
-        return T_fluid[batch]
+        return T_fluid[batch] * (relaxation) + (1 - relaxation) * T_fluid_old[batch]
     except:
         nx, ny, nt = x.shape
         cos_z = 200 * np.sin(np.linspace(0, 3.14, 80))[:65].reshape(65, 1)
-        return np.ones((ny, nt)) * 560
+        # return np.ones((ny, nt)) * 560
         return np.ones((ny, nt)) * 560 + cos_z
 
 
@@ -178,6 +189,17 @@ def read_e_to_np(file_path):
     return np.concatenate((z_matrix, flux), axis=0)
 
 
+def rename(original_file_path, new_file_path):
+    if os.path.exists(original_file_path):
+        # 如果原始文件存在，检查新文件是否存在
+        if os.path.exists(new_file_path):
+            # 如果新文件存在，先删除它
+            os.remove(new_file_path)
+
+        # 重命名文件
+        shutil.move(original_file_path, new_file_path)
+
+
 def main(n=1):
     # this file should be run in current file path
 
@@ -204,8 +226,11 @@ def main(n=1):
     print("T_fuel: ", outputs_all.shape)
     print("T_fluid: ", Tfluid_all.shape)
     print("phi_all: ", phi_all.shape)
+    rename("./output/n_to_fuel.npy", "./output/n_to_fuel_old.npy")
     np.save("./output/n_to_fuel", np.array(phi_all))
+    rename("./output/fluid_to_fuel.npy", "./output/fluid_to_fuel_old.npy")
     np.save("./output/fluid_to_fuel", np.array(Tfluid_all))
+    rename("./output/nft_Tfuel.npy", "./output/nft_Tfuel_old.npy")
     np.save("./output/nft_Tfuel", np.array(outputs_all))
 
 
