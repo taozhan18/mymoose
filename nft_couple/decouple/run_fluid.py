@@ -119,9 +119,9 @@ def read_e_to_np(file_path):
     num_time_steps = len(time_steps)
     T_fluid = np.array(dataset.variables["vals_elem_var1eb1"]).reshape(1, num_time_steps, 64, 12)
     # print(np.min(T_fluid), np.max(T_fluid))
-    pressure = np.array(dataset.variables["vals_elem_var2eb1"]).reshape(1, num_time_steps, 64, 12)
-    vel_x = np.array(dataset.variables["vals_elem_var3eb1"]).reshape(1, num_time_steps, 64, 12)
-    vel_y = np.array(dataset.variables["vals_elem_var4eb1"]).reshape(1, num_time_steps, 64, 12)
+    pressure = np.array(dataset.variables["vals_elem_var3eb1"]).reshape(1, num_time_steps, 64, 12)
+    vel_x = np.array(dataset.variables["vals_elem_var4eb1"]).reshape(1, num_time_steps, 64, 12)
+    vel_y = np.array(dataset.variables["vals_elem_var5eb1"]).reshape(1, num_time_steps, 64, 12)
 
     unique_x = unique_within_tolerance(np.array(x_coords), 1e-6)
     unique_y = unique_within_tolerance(np.array(y_coords), 1e-3)

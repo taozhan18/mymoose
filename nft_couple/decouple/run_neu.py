@@ -106,40 +106,32 @@ def gen_phi_BC(batch, *arg):
         phi_all = []
         time_steps = 16
         while True:
-            # 时间步设置
-
-            # 生成五个x坐标和y坐标
             x_random = generate_x_coords(0, 0.75, 5, 0.075)
             y_random = np.random.uniform(0.5, 3, 5)
             max_index = np.argmax(y_random)
-            # 固定点
             x_fixed = np.array([0, 0.75])
             y_fixed = np.array([0.5, 0.5])
 
-            # 合并所有点
             x_all = np.concatenate(([x_fixed[0]], x_random, [x_fixed[1]]))
             y_all = np.concatenate(([y_fixed[0]], y_random, [y_fixed[1]]))
 
-            # 拟合初始样条曲线
             spline = make_interp_spline(x_all, y_all)
 
-            # 生成曲线点
             x_spline = np.linspace(0, 0.75, 65)
             y_spline = spline(x_spline)
             if np.all(y_spline >= 0):
                 break
         phi_all.append(y_spline)
 
-        # 随着时间增加峰值
         max_increase = np.random.uniform(0.1, 0.9)
         for t in range(1, time_steps):
             peak_increase = np.random.uniform(0.1, max_increase)
             factor = np.random.uniform(0.1, 0.7, 5)
             y_random += factor * peak_increase
-            y_random[max_index] += (1 - factor[max_index]) * peak_increase  # 增加峰值
-            y_all = np.concatenate(([y_fixed[0]], y_random, [y_fixed[1]]))  # 更新y坐标
-            spline = make_interp_spline(x_all, y_all)  # 重新拟合样条曲线
-            y_spline = np.abs(spline(x_spline))  # 生成曲线点
+            y_random[max_index] += (1 - factor[max_index]) * peak_increase  #
+            y_all = np.concatenate(([y_fixed[0]], y_random, [y_fixed[1]]))
+            spline = make_interp_spline(x_all, y_all)
+            y_spline = np.abs(spline(x_spline))
             phi_all.append(np.abs(y_spline))
         phi_all = np.array(phi_all).transpose(1, 0)
         return phi_all
@@ -221,7 +213,6 @@ def gen_neu_inp(batch):
         bias_t=0,
     )
     write_inp("./inp1D_base.txt", "./neutroninp/phi.txt", replacements_phi)
-    # write_inp('./inp_base.txt', './neutroninp/D_fluid.txt',replacements_D_fluid)
     write_inp("./inp_base.txt", "./neutroninp/sigma_af_fuel.txt", replacements_sigma_af_fuel)
     write_inp("./inp_base.txt", "./neutroninp/sigma_af_fluid.txt", replacements_sigma_af_fluid)
     inp_file = ["'neutroninp/phi.txt'", "'neutroninp/sigma_af_fuel.txt'", "'neutroninp/sigma_af_fluid.txt'"]
@@ -232,20 +223,15 @@ def gen_neu_inp(batch):
 
 def read_e_to_np(file_path):
     def unique_within_tolerance(arr, tol):
-        # 首先对数组进行排序
         sorted_arr = np.sort(arr)
-        # 初始化一个空列表来存储唯一元素
         unique = [sorted_arr[0]]
         for i in range(1, len(sorted_arr)):
-            # 如果当前元素与列表中最后一个元素的差的绝对值大于容忍度，则添加到列表中
             if np.abs(sorted_arr[i] - unique[-1]) > tol:
                 unique.append(sorted_arr[i])
-        # 将列表转换回NumPy数组
         return np.array(unique)
 
     dataset = nc.Dataset(file_path, "r")
 
-    # 获取节点坐标
     x_coords = dataset.variables["coordx"][:]
     y_coords = dataset.variables["coordy"][:]
     if "coordz" in dataset.variables:
@@ -253,15 +239,12 @@ def read_e_to_np(file_path):
     else:
         z_coords = [0.0] * len(x_coords)
 
-    # 获取节点数
     num_nodes = len(x_coords)
 
-    # 获取单元连接信息
     connectivity = dataset.variables["connect1"][:]
     blocks = dataset.variables["eb_names"][:]
     num_blocks = len(blocks)
 
-    # 获取时间步
     time_steps = dataset.variables["time_whole"][:]
     num_time_steps = len(time_steps)
     u = dataset.variables["vals_nod_var1"]
@@ -284,9 +267,7 @@ def read_e_to_np(file_path):
 
 def rename(original_file_path, new_file_path):
     if os.path.exists(original_file_path):
-        # 如果原始文件存在，检查新文件是否存在
         if os.path.exists(new_file_path):
-            # 如果新文件存在，先删除它
             os.remove(new_file_path)
 
         # 重命名文件
@@ -301,13 +282,9 @@ def main(n):
     outputs_all = []
     for i in tqdm(range(n), desc="calculate loop time step", total=n):
         phiBC, Tfuel, Tfluid = gen_neu_inp(i)
-        # 构建命令
         command = ["mpiexec", "-n", "1", "../../workspace-opt", "-i", "neutron.i"]
-        # 执行命令
         result = subprocess.run(command, capture_output=True, text=True)
-        # 打印标准输出和错误输出
-        # print(result.stdout)  # 打印命令的标准输出
-        print(result.stderr)  # 打印命令的错误输出（如果有）
+        print(result.stderr)
         outputs = read_e_to_np("./neutron_exodus.e")
         phiBC_all.append(phiBC)
         T_fuel_all.append(Tfuel)

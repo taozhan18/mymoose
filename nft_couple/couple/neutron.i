@@ -1,4 +1,4 @@
-phi_in = './outer_coupled/neutroninp/phi.txt'
+phi_in = './phi.txt'
 v = 2.416
 
 [Mesh]
@@ -158,14 +158,14 @@ v = 2.416
   [./top]
     type = DirichletBC
     variable = u
-    value = 0
+    value = 0.5
     boundary = top
   [../]
 
   [./bottom]
     type = DirichletBC
     variable = u
-    value = 0
+    value = 0.5
     boundary = bottom
   [../]
 []

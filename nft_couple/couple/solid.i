@@ -44,7 +44,7 @@
     type = CoupledForce
     variable = T
     v = power
-    coef = 1e8
+    coef = 5e7
   []
 []
 

@@ -4,7 +4,7 @@
 
 [Mesh]
   type = FileMesh
-  file = represent_mesh.e  # 替换为你的网格文件
+  file = represent_mesh1.e  # 替换为你的网格文件
 []
 
 [Variables]
@@ -83,11 +83,8 @@
     type = ParsedFunction
     expression = '9.2+0.0175*(t-273)-2e-6*(t-273)*(t-273)'  # 热导率随温度变化的函数
   [../]
-  # [./flux_BC]
-  #   type = PiecewiseMulticonstant
-  #   direction = 'left right'
-  #   data_file = ${flux}
-  # [../]
+
+
 []
 
 [BCs]
@@ -124,122 +121,134 @@
       function = 2e6
     [../]
   [../]
+
   [./InclinedNoDisplacementBC]
-    [./left]
-      boundary = 'left'
-      penalty = 1e15
-      displacements = "disp_x disp_y"
-    [../]
+
     [./bottom]
-      boundary = 'bottom'
+      boundary = bottom
       penalty = 1e15
       displacements = "disp_x disp_y"
     [../]
+
+    [./left]
+      boundary = left
+      penalty = 1e15
+      displacements = "disp_x disp_y"
+    [../]
+
   [../]
-  [fix_bc_y]
-    type = DirichletBC
-    variable = disp_y
-    boundary = 'bottom'
-    value = 0
-  []
+
+
+
+
 []
 
 [ICs]
   [./ic_flux_1]
     type = ConstantIC
     variable = flux_BC
-    value = 1000000.0
+    value = 100000.0
     block = '101'
   [../]
   [./ic_flux_2]
     type = ConstantIC
     variable = flux_BC
-    value = 1000000.0
+    value = 100000.0
     block = '102'
   [../]
   [./ic_flux_3]
     type = ConstantIC
     variable = flux_BC
-    value = 1000000.0
+    value = 100000.0
     block = '103'
   [../]
   [./ic_flux_4]
     type = ConstantIC
     variable = flux_BC
-    value = 1000000.0
+    value = 100000.0
     block = '104'
   [../]
   [./ic_flux_5]
     type = ConstantIC
     variable = flux_BC
-    value = 1000000.0
+    value = 100000.0
     block = '105'
   [../]
   [./ic_flux_6]
     type = ConstantIC
     variable = flux_BC
-    value = 1000000.0
+    value = 100000.0
     block = '106'
   [../]
   [./ic_flux_7]
     type = ConstantIC
     variable = flux_BC
-    value = 1000000.0
+    value = 100000.0
     block = '107'
   [../]
   [./ic_flux_8]
     type = ConstantIC
     variable = flux_BC
-    value = 1000000.0
+    value = 100000.0
     block = '108'
   [../]
   [./ic_flux_9]
     type = ConstantIC
     variable = flux_BC
-    value = 1000000.0
+    value = 100000.0
     block = '109'
   [../]
   [./ic_flux_10]
     type = ConstantIC
     variable = flux_BC
-    value = 1000000.0
+    value = 100000.0
     block = '110'
   [../]
   [./ic_flux_11]
     type = ConstantIC
     variable = flux_BC
-    value = 1000000.0
+    value = 100000.0
     block = '111'
   [../]
   [./ic_flux_12]
     type = ConstantIC
     variable = flux_BC
-    value = 1000000.0
+    value = 100000.0
     block = '112'
   [../]
   [./ic_flux_13]
     type = ConstantIC
     variable = flux_BC
-    value = 1000000.0
+    value = 100000.0
     block = '113'
   [../]
   [./ic_flux_14]
     type = ConstantIC
     variable = flux_BC
-    value = 1000000.0
+    value = 100000.0
     block = '114'
   [../]
   [./ic_flux_15]
     type = ConstantIC
     variable = flux_BC
-    value = 1000000.0
+    value = 100000.0
     block = '115'
   [../]
   [./ic_flux_16]
     type = ConstantIC
     variable = flux_BC
-    value = 1000000.0
+    value = 100000.0
     block = '116'
+  [../]
+  [./ic_disp_x]
+      type = FunctionIC
+      variable = 'disp_x'
+      function = 0
+  [../]
+  [./ic_disp_y]
+      type = FunctionIC
+      variable = 'disp_y'
+      function = 0
   [../]
 []
 
@@ -254,11 +263,15 @@
   type = Steady
   petsc_options_iname = '-pc_type'
   petsc_options_value = 'lu'
+  l_max_its = 20
+  nl_max_its = 5
   #end_time = 5
   #dt = 1
 []
 
 [Outputs]
-  exodus = true
-  #file_base = val
+  [exodus]
+    type = Exodus
+    elemental_as_nodal = true
+  []
 []

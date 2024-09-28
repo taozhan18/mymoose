@@ -303,8 +303,34 @@ def main(n=2):
     np.save("./output/nft_phi", np.array(neu_all))
 
 
+def main1():
+    # this file should be run in current file path
+    T_fuel_all = []
+    T_fluid_all = []
+    neu_all = []
+    command = ["mpiexec", "-n", "1", "../../workspace-opt", "-i", "solid.i"]
+    # 执行命令
+    result = subprocess.run(command, capture_output=True, text=True)
+    # 打印标准输出和错误输出
+    # print(result.stdout)  # 打印命令的标准输出
+    print(result.stderr)  # 打印命令的错误输出（如果有）
+    Tfuel = read_fuel_to_np("./solid_exodus.e")
+    fluid = read_fluid_to_np("./solid_out_sub_app0_sub_app0_exodus.e")
+    neutron = read_neu_to_np("./solid_out_sub_app0_exodus.e")
+    T_fuel_all.append(Tfuel)
+    T_fluid_all.append(fluid)
+    neu_all.append(neutron)
+    np.save("./output/nft_Tfuel", np.array(T_fuel_all))
+    np.save("./output/nft_Tfluid", np.array(T_fluid_all))
+    np.save("./output/nft_phi", np.array(neu_all))
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate data")
     parser.add_argument("--n", default="2000", type=int, help="number of sample")
+    parser.add_argument("--type", default="single", type=str, help="single or batch")
     args = parser.parse_args()
-    main(args.n)
+    if args.type == "single":
+        main1()
+    else:
+        main(args.n)
